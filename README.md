@@ -35,6 +35,8 @@ A modern, AI-powered touch typing tutor that generates personalized lessons base
 
 - Bun 1.3.0 or higher
 - Google Gemini API key
+- Turso (or another libSQL-compatible) database for passwordless auth codes
+- SMTP credentials (optional locally; required to email login codes in production)
 
 ### Installation
 
@@ -51,8 +53,21 @@ bun install
 
 3. Set up environment variables:
 ```bash
-echo "GEMINI_API_KEY=your_api_key_here" > .env.local
+cat <<'ENV' > .env.local
+GEMINI_API_KEY=your_api_key_here
+AUTH_SECRET=generate_a_long_random_string
+DATABASE_URL=libsql://your-database-url.turso.io
+DATABASE_AUTH_TOKEN=your_turso_auth_token
+EMAIL_FROM="KeyStorm <no-reply@keystorm.app>"
+# Optional in development: omit these to log login codes to the console
+SMTP_HOST=smtp.yourprovider.com
+SMTP_PORT=587
+SMTP_USER=your_smtp_user
+SMTP_PASSWORD=your_smtp_password
+ENV
 ```
+
+> 💡 If you skip the SMTP settings locally, one-time codes are logged to the terminal for easy testing.
 
 4. Run the development server:
 ```bash
@@ -63,9 +78,10 @@ bun run dev
 
 ## Usage
 
-1. **Landing Page**: Learn about KeyStorm and click "Get Started"
-2. **Onboarding**: Enter your name and choose a theme (e.g., "Islam", "Science", "History")
-3. **Practice**: Work through progressively challenging lessons:
+1. **Landing Page**: Request a passwordless sign-in code or continue in guest mode.
+2. **Onboarding**: Enter an optional name and (if signed in) choose a custom theme.
+3. **Letter Practice**: Work through the responsive keyboard view—letters advance automatically when typed correctly.
+4. **Practice**: Work through progressively challenging lessons:
    - **Level 1**: Type individual letters in random order
    - **Level 2**: Practice themed vocabulary words
    - **Level 3**: Type complete sentences
@@ -78,12 +94,16 @@ keystorm/
 ├── src/
 │   ├── app/
 │   │   ├── api/
+│   │   │   ├── auth/
+│   │   │   │   ├── [...nextauth]/route.ts  # NextAuth route handler
+│   │   │   │   └── request-code/route.ts   # Email one-time code endpoint
 │   │   │   └── generate-lessons/
-│   │   │       └── route.ts          # API endpoint for lesson generation
+│   │   │       └── route.ts               # Theme-safe lesson generation
 │   │   ├── learn/
-│   │   │   └── page.tsx              # Learning instructions page
+│   │   │   └── page.tsx                   # Learning instructions page
 │   │   ├── practice/
-│   │   │   └── page.tsx              # Main practice interface
+│   │   │   ├── letters/page.tsx           # Letter-only responsive practice
+│   │   │   └── page.tsx                   # Main practice interface
 │   │   └── page.tsx                  # Landing page redirect
 │   ├── components/
 │   │   ├── typing/
@@ -94,9 +114,12 @@ keystorm/
 │   ├── hooks/
 │   │   └── useTypingGame.ts          # Custom hook for typing logic
 │   ├── lib/
+│   │   ├── db.ts                     # Drizzle/Turso client
+│   │   ├── default-lessons.ts        # Guest-mode lessons
 │   │   ├── gemini.ts                 # Gemini API client
 │   │   ├── lesson-generator.ts       # Lesson content generation
-│   │   └── constants.ts              # App constants
+│   │   ├── schema.ts                 # Auth database schema
+│   │   └── theme-validation.ts       # Theme safety checks
 │   └── utils/
 │       ├── keyboard-utils.ts         # Keyboard position utilities
 │       └── stats-calculator.ts       # WPM and accuracy calculations
@@ -109,7 +132,7 @@ keystorm/
 
 ### POST `/api/generate-lessons`
 
-Generates personalized typing lessons based on a theme.
+Generates personalized typing lessons based on a theme. Requires an authenticated session; guests use the built-in Islamic curriculum instead.
 
 **Request Body:**
 ```json
