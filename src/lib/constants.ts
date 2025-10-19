@@ -1,3 +1,10 @@
+export const KEYBOARD_ROWS = [
+    ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='],
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'"],
+    ['Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/'],
+];
+
 export type FingerPosition = { finger: string; keys: string[]; color: string };
 
 export const FINGER_POSITIONS: FingerPosition[] = [
@@ -13,40 +20,6 @@ export const FINGER_POSITIONS: FingerPosition[] = [
         finger: 'Right Pinky',
         keys: ['P', ';', '/', '0', '[', ']', "'", '"', ':', '?', '-', '=', '_', '+', ')', '\\', '|', '{', '}'],
     },
-];
-
-export const ROUNDS = [
-    {
-        level: 1,
-        sentences: [
-            'the quick brown fox jumps over the lazy dog',
-            'pack my box with five dozen liquor jugs',
-            'how vexingly quick daft zebras jump',
-        ],
-    },
-    {
-        level: 2,
-        sentences: [
-            'the five boxing wizards jump quickly and gracefully',
-            'sphinx of black quartz judge my vow',
-            'waltz bad nymph for quick jigs vex',
-        ],
-    },
-    {
-        level: 3,
-        sentences: [
-            'jackdaws love my big sphinx of quartz',
-            'the quick onyx goblin jumps over the lazy dwarf',
-            'crazy frederick bought many very exquisite opal jewels',
-        ],
-    },
-];
-
-export const KEYBOARD_ROWS = [
-    ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='],
-    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
-    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'"],
-    ['Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/'],
 ];
 
 const LEFT_FINGERS = [

@@ -1,66 +1,113 @@
 'use client';
 
+import { Check } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import KeyboardWithHands from '@/components/typing/KeyboardWithHands';
+import { KeyboardVisual } from '@/components/typing/KeyboardVisual';
+import { StatsDisplay } from '@/components/typing/StatsDisplay';
+import { TextDisplay } from '@/components/typing/TextDisplay';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { ROUNDS } from '@/lib/constants';
+import { useAudioContext } from '@/hooks/useAudioContext';
+import { useGameStats } from '@/hooks/useGameStats';
+import { useTypingGame } from '@/hooks/useTypingGame';
+
+type LessonType = 'letters' | 'words' | 'sentences' | 'paragraphs';
+
+type Lesson = { type: LessonType; content: string[]; level: number };
+
+const MOCK_LESSONS: Lesson[] = [
+    {
+        content: [
+            'a',
+            's',
+            'd',
+            'f',
+            'j',
+            'k',
+            'l',
+            ';',
+            'g',
+            'h',
+            'e',
+            'i',
+            'r',
+            'u',
+            'w',
+            'o',
+            'q',
+            'p',
+            't',
+            'y',
+            'v',
+            'm',
+            'c',
+            'n',
+            'b',
+            'x',
+            'z',
+        ],
+        level: 1,
+        type: 'letters',
+    },
+    {
+        content: ['salat', 'zakat', 'birr', 'taqwa', 'imam', 'umar', 'ali', 'fatima', 'aisha', 'muhammad'],
+        level: 2,
+        type: 'words',
+    },
+    {
+        content: [
+            'There are five daily obligatory prayers.',
+            'Charity purifies the soul and wealth.',
+            'Patience is a virtue in times of hardship.',
+        ],
+        level: 3,
+        type: 'sentences',
+    },
+    {
+        content: [
+            'Patience persists through persistent practice. Believers build bridges between belief and benevolence. Sincere servants seek sacred serenity.',
+        ],
+        level: 4,
+        type: 'paragraphs',
+    },
+];
 
 export default function PracticePage() {
-    const [gameState, setGameState] = useState<'ready' | 'playing' | 'finished'>('ready');
-    const [currentRound, setCurrentRound] = useState(0);
-    const [currentText, setCurrentText] = useState('');
-    const [userInput, setUserInput] = useState('');
-    const [startTime, setStartTime] = useState<number | null>(null);
-    const [errors, setErrors] = useState(0);
-    const [backspaceCount, setBackspaceCount] = useState(0);
-    const [wpm, setWpm] = useState(0);
-    const [accuracy, setAccuracy] = useState(100);
-    const [activeKey, setActiveKey] = useState('');
+    const router = useRouter();
+    const [lessons, setLessons] = useState<Lesson[]>([]);
+    const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+    const [currentItemIndex, setCurrentItemIndex] = useState(0);
+    const [mounted, setMounted] = useState(false);
 
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const { playErrorSound } = useAudioContext();
+
+    const currentLesson = lessons[currentLessonIndex];
+    const currentText = currentLesson?.content[currentItemIndex] || '';
+
+    const { typingState, gameState, inputRef, startGame, handleInputChange, resetGame } = useTypingGame(
+        currentText,
+        playErrorSound,
+    );
+
+    const stats = useGameStats(typingState, currentText);
+    const progress = currentText.length > 0 ? (typingState.userInput.length / currentText.length) * 100 : 0;
+    const nextChar = typingState.userInput.length < currentText.length ? currentText[typingState.userInput.length] : '';
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        setMounted(true);
+        const storedLessons = sessionStorage.getItem('lessons');
+        if (storedLessons) {
+            setLessons(JSON.parse(storedLessons));
+        } else {
+            setLessons(MOCK_LESSONS);
         }
     }, []);
 
-    const playErrorSound = useCallback(() => {
-        if (!audioContextRef.current) {
-            return;
-        }
-        const ctx = audioContextRef.current;
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.connect(g);
-        g.connect(ctx.destination);
-        o.frequency.value = 200;
-        o.type = 'sine';
-        g.gain.setValueAtTime(0.3, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-        o.start(ctx.currentTime);
-        o.stop(ctx.currentTime + 0.1);
-    }, []);
-
-    const startGame = useCallback(() => {
-        const sentences = ROUNDS[currentRound].sentences;
-        const randomSentence = sentences[Math.floor(Math.random() * sentences.length)];
-        setCurrentText(randomSentence);
-        setUserInput('');
-        setErrors(0);
-        setBackspaceCount(0);
-        setStartTime(Date.now());
-        setGameState('playing');
-        // Focus the typing input as soon as the round starts
-        setTimeout(() => inputRef.current?.focus(), 50);
-    }, [currentRound]);
-
-    // Make Enter work even if no input has focus
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (gameState === 'ready' && e.key === 'Enter') {
@@ -72,202 +119,116 @@ export default function PracticePage() {
         return () => window.removeEventListener('keydown', onKey);
     }, [gameState, startGame]);
 
-    const calculateStats = useCallback(
-        (input: string, target: string, timeElapsed: number) => {
-            const words = input.trim().split(' ').filter(Boolean).length || 0;
-            const minutes = Math.max(timeElapsed / 60000, 0.001);
-            const calculatedWpm = Math.round(words / minutes) || 0;
-
-            let correctChars = 0;
-            for (let i = 0; i < input.length; i++) {
-                if (input[i] === target[i]) {
-                    correctChars++;
-                }
-            }
-            const totalChars = input.length || 1;
-            const errorPenalty = backspaceCount * 0.5;
-            const calculatedAccuracy = Math.max(0, Math.round((correctChars / totalChars) * 100 - errorPenalty));
-
-            setWpm(calculatedWpm);
-            setAccuracy(calculatedAccuracy);
-        },
-        [backspaceCount],
-    );
-
-    const handleInputChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            const value = e.target.value;
-            const prevLength = userInput.length;
-
-            if (value.length < prevLength) {
-                setBackspaceCount((p) => p + 1);
-            }
-
-            if (value.length > userInput.length) {
-                const lastChar = value[value.length - 1];
-                const expectedChar = currentText[value.length - 1];
-                if (lastChar !== expectedChar) {
-                    setErrors((p) => p + 1);
-                    playErrorSound();
-                }
-            }
-
-            setUserInput(value);
-
-            if (startTime) {
-                const timeElapsed = Date.now() - startTime;
-                calculateStats(value, currentText, timeElapsed);
-            }
-
-            if (value === currentText) {
-                setGameState('finished');
-            }
-        },
-        [userInput, currentText, startTime, calculateStats, playErrorSound],
-    );
-
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (gameState === 'playing' && e.key !== 'Tab') {
-                setActiveKey(e.key);
-            }
-        },
-        [gameState],
-    );
-
-    const handleKeyUp = useCallback(() => setActiveKey(''), []);
-
-    const nextRound = useCallback(() => {
-        if (currentRound < ROUNDS.length - 1) {
-            setCurrentRound((p) => p + 1);
-            setGameState('ready');
+    const handleNext = useCallback(() => {
+        if (currentItemIndex < currentLesson.content.length - 1) {
+            setCurrentItemIndex((p) => p + 1);
+            resetGame();
+        } else if (currentLessonIndex < lessons.length - 1) {
+            setCurrentLessonIndex((p) => p + 1);
+            setCurrentItemIndex(0);
+            resetGame();
         } else {
-            setCurrentRound(0);
-            setGameState('ready');
+            setCurrentLessonIndex(0);
+            setCurrentItemIndex(0);
+            resetGame();
         }
-    }, [currentRound]);
+    }, [currentItemIndex, currentLessonIndex, currentLesson, lessons.length, resetGame]);
 
-    const progress = useMemo(
-        () => (currentText.length > 0 ? (userInput.length / currentText.length) * 100 : 0),
-        [userInput.length, currentText.length],
-    );
-
-    const displayText = useMemo(
-        () =>
-            currentText.split('').map((char, i) => {
-                let className = 'text-2xl ';
-                if (i < userInput.length) {
-                    className += userInput[i] === char ? 'text-green-600' : 'text-red-600 font-bold';
-                } else if (i === userInput.length) {
-                    className += 'text-gray-900 border-b-4 border-blue-500';
-                } else {
-                    className += 'text-gray-400';
-                }
-                return (
-                    <span key={i} className={className}>
-                        {char}
-                    </span>
-                );
-            }),
-        [currentText, userInput],
-    );
-
-    const nextChar = useMemo(
-        () => (userInput.length < currentText.length ? currentText[userInput.length] : ''),
-        [userInput.length, currentText],
-    );
+    if (!mounted || !currentLesson) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+                <Card className="p-8">
+                    <p className="text-center text-gray-600">Loading lessons...</p>
+                </Card>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-8">
-            <div className="mx-auto max-w-6xl">
-                <Card className="shadow-xl">
-                    {/* Sticky header for all states */}
-                    <CardHeader className="sticky top-0 z-20 border-b bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
+            <div className="mx-auto w-full max-w-6xl flex-1">
+                <Card className="flex h-full flex-col">
+                    <CardHeader className="border-b bg-white/90 py-3 backdrop-blur">
                         <div className="flex items-center justify-between">
                             <div>
-                                <CardTitle>Level {ROUNDS[currentRound].level}</CardTitle>
-                                <CardDescription>
+                                <CardTitle className="text-lg">Level {currentLesson.level}</CardTitle>
+                                <CardDescription className="text-sm">
                                     {gameState === 'ready'
-                                        ? 'Press Enter to start typing'
+                                        ? 'Press Enter to start'
                                         : gameState === 'playing'
-                                          ? 'Type the sentence below'
-                                          : 'Round complete'}
+                                          ? `Type the ${currentLesson.type}`
+                                          : 'Complete!'}
                                 </CardDescription>
                             </div>
-                            <div className="flex gap-4">
-                                <Badge variant="secondary" className="px-4 py-2 text-lg">
-                                    {wpm} WPM
-                                </Badge>
-                                <Badge variant="secondary" className="px-4 py-2 text-lg">
-                                    {accuracy}% Accuracy
-                                </Badge>
-                                <Badge variant="destructive" className="px-4 py-2 text-lg">
-                                    {errors} Errors
-                                </Badge>
-                            </div>
+                            <StatsDisplay stats={stats} />
                         </div>
-                        <Progress value={progress} className="mt-3" />
+                        <Progress value={progress} className="mt-2" />
                     </CardHeader>
 
-                    <CardContent className="space-y-6">
-                        {gameState === 'ready' && (
-                            <div className="flex flex-col items-center gap-6 py-12">
-                                <Button
-                                    size="lg"
-                                    onClick={startGame}
-                                    className="bg-gradient-to-r from-indigo-600 to-purple-600"
+                    <CardContent className="flex flex-1 flex-col gap-3 overflow-hidden py-3">
+                        <AnimatePresence mode="wait">
+                            {gameState === 'ready' && (
+                                <motion.div
+                                    key="ready"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="flex flex-1 items-center justify-center"
                                 >
-                                    Start
-                                </Button>
-                                {/* Fallback for Enter key if focus is lost */}
-                                <Input
-                                    type="text"
-                                    className="sr-only"
-                                    onKeyDown={(e) => e.key === 'Enter' && startGame()}
-                                    autoFocus
-                                />
-                            </div>
-                        )}
+                                    <Button
+                                        size="lg"
+                                        onClick={startGame}
+                                        className="bg-gradient-to-r from-indigo-600 to-purple-600"
+                                    >
+                                        Start
+                                    </Button>
+                                </motion.div>
+                            )}
 
-                        {gameState !== 'ready' && (
-                            <>
-                                {/* Prompt */}
-                                <div className="rounded-lg bg-gray-50 p-6 font-mono leading-relaxed">{displayText}</div>
+                            {gameState !== 'ready' && (
+                                <motion.div
+                                    key="playing"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex flex-1 flex-col gap-3"
+                                >
+                                    <TextDisplay targetText={currentText} userInput={typingState.userInput} />
 
-                                {/* Keyboard (smaller to reduce vertical scroll) */}
-                                <div className="mx-auto w-full max-w-2xl">
-                                    <KeyboardWithHands activeKey={nextChar} />
-                                </div>
-
-                                {/* Typing input */}
-                                <Input
-                                    ref={inputRef}
-                                    type="text"
-                                    value={userInput}
-                                    onChange={handleInputChange}
-                                    onKeyDown={handleKeyDown}
-                                    onKeyUp={handleKeyUp}
-                                    className="font-mono text-xl"
-                                    autoFocus
-                                    spellCheck={false}
-                                    autoComplete="off"
-                                    autoCorrect="off"
-                                    autoCapitalize="off"
-                                />
-
-                                {gameState === 'finished' && (
-                                    <div className="flex items-center justify-center gap-4 pt-2">
-                                        <Button
-                                            onClick={nextRound}
-                                            size="lg"
-                                            className="bg-gradient-to-r from-indigo-600 to-purple-600"
-                                        >
-                                            {currentRound < ROUNDS.length - 1 ? 'Next Level' : 'Start Over'}
-                                        </Button>
+                                    <div className="flex-shrink-0">
+                                        <KeyboardVisual activeKey={nextChar} />
                                     </div>
-                                )}
-                            </>
-                        )}
+
+                                    <Input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={typingState.userInput}
+                                        onChange={handleInputChange}
+                                        className="font-mono text-lg"
+                                        autoFocus
+                                        spellCheck={false}
+                                        autoComplete="off"
+                                        autoCorrect="off"
+                                        autoCapitalize="off"
+                                    />
+
+                                    {gameState === 'finished' && (
+                                        <div className="flex justify-center">
+                                            <Button
+                                                onClick={handleNext}
+                                                size="lg"
+                                                className="bg-gradient-to-r from-indigo-600 to-purple-600"
+                                            >
+                                                {currentItemIndex < currentLesson.content.length - 1
+                                                    ? 'Next'
+                                                    : currentLessonIndex < lessons.length - 1
+                                                      ? 'Next Level'
+                                                      : 'Restart'}
+                                            </Button>
+                                        </div>
+                                    )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </CardContent>
                 </Card>
             </div>
