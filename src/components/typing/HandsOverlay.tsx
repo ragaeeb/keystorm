@@ -1,7 +1,5 @@
 'use client';
 
-import * as React from 'react';
-
 type Props = {
     /** tweak overall vertical alignment over the Keypad */
     y?: number; // px
@@ -26,7 +24,12 @@ export default function HandsOverlay({
 }: Props) {
     return (
         <div className={className} style={{ top: `${y}%` }}>
-            <svg viewBox="0 0 1000 380" preserveAspectRatio="xMidYMid meet" className="h-full w-full" aria-hidden>
+            <svg
+                viewBox="0 0 1000 380"
+                preserveAspectRatio="xMidYMid meet"
+                className="h-full w-full"
+                aria-hidden="true"
+            >
                 <defs>
                     <filter id="handShadow" x="-20%" y="-20%" width="140%" height="140%">
                         <feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity={shadow} />

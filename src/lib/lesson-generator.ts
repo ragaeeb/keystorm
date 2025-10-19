@@ -1,8 +1,5 @@
+import type { Lesson } from '@/types/lesson';
 import { GeminiModel, generateWithGemini } from './gemini';
-
-type LessonType = 'letters' | 'words' | 'sentences' | 'paragraphs';
-
-type Lesson = { type: LessonType; content: string[]; level: number };
 
 type GeneratedContent = { letters: string[]; words: string[]; sentences: string[]; paragraphs: string[] };
 

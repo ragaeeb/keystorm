@@ -14,8 +14,9 @@ export const TextDisplay = ({ targetText, userInput }: TextDisplayProps) => {
                 } else {
                     className += 'text-gray-400';
                 }
+                const key = `${char}-${i}`;
                 return (
-                    <span key={i} className={className}>
+                    <span key={key} className={className}>
                         {char}
                     </span>
                 );
