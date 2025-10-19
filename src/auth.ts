@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { db, ensureDatabase } from '@/lib/db';
 import { loginCodes, users } from '@/lib/schema';
 
 type AdapterUser = { email: string; emailVerified: Date | null; id: string; image: string | null; name: string | null };
@@ -13,13 +13,28 @@ const credentialsSchema = z.object({ code: z.string().regex(/^\d{6}$/), email: z
 
 const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
 
+const rawAdapter = DrizzleAdapter(db);
+
+const adapter = new Proxy(rawAdapter, {
+    get(target, property, receiver) {
+        const value = Reflect.get(target, property, receiver);
+        if (typeof value !== 'function') {
+            return value;
+        }
+        return async (...args: unknown[]) => {
+            await ensureDatabase();
+            return value.apply(target, args as never);
+        };
+    },
+});
+
 export const {
     auth,
     handlers: { GET, POST },
     signIn,
     signOut,
 } = NextAuth({
-    adapter: DrizzleAdapter(db),
+    adapter: adapter,
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
@@ -50,6 +65,7 @@ export const {
                 const email = parsed.data.email.toLowerCase();
                 const codeHash = hashCode(parsed.data.code);
 
+                await ensureDatabase();
                 const [storedCode] = await db.select().from(loginCodes).where(eq(loginCodes.email, email)).limit(1);
 
                 if (!storedCode) {

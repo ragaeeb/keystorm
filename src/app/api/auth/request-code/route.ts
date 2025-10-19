@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { db, ensureDatabase } from '@/lib/db';
 import { loginCodes } from '@/lib/schema';
 
 const requestSchema = z.object({ email: z.string().email() });
@@ -53,6 +53,7 @@ export const POST = async (request: NextRequest) => {
         const codeHash = hashCode(code);
         const expiresAt = Date.now() + 10 * 60 * 1000;
 
+        await ensureDatabase();
         await db.delete(loginCodes).where(eq(loginCodes.email, email));
         await db.insert(loginCodes).values({ codeHash, email, expiresAt });
 
