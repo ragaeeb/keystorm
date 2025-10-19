@@ -1,25 +1,114 @@
 // FILE: src/components/typing/KeyboardVisual.tsx
 'use client';
 
+import { clsx } from 'clsx';
 import { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FINGER_POSITIONS, KEYBOARD_ROWS } from '@/lib/constants';
 import { getFingerColor, getKeyPosition } from '@/lib/keyboard';
 
-const ALL_FINGERS = [
-    { color: FINGER_POSITIONS[0].color, homeX: 32, homeY: 167, name: 'Left Pinky', width: 28 },
-    { color: FINGER_POSITIONS[1].color, homeX: 72, homeY: 167, name: 'Left Ring', width: 30 },
-    { color: FINGER_POSITIONS[2].color, homeX: 112, homeY: 167, name: 'Left Middle', width: 30 },
-    { color: FINGER_POSITIONS[3].color, homeX: 152, homeY: 167, name: 'Left Index', width: 30 },
-    { color: FINGER_POSITIONS[4].color, homeX: 232, homeY: 167, name: 'Right Index', width: 30 },
-    { color: FINGER_POSITIONS[5].color, homeX: 272, homeY: 167, name: 'Right Middle', width: 30 },
-    { color: FINGER_POSITIONS[6].color, homeX: 312, homeY: 167, name: 'Right Ring', width: 30 },
-    { color: FINGER_POSITIONS[7].color, homeX: 352, homeY: 167, name: 'Right Pinky', width: 28 },
+const FINGER_HOME_KEYS = [
+    { fingerIndex: 0, homeKey: 'A', name: 'Left Pinky', width: 28 },
+    { fingerIndex: 1, homeKey: 'S', name: 'Left Ring', width: 30 },
+    { fingerIndex: 2, homeKey: 'D', name: 'Left Middle', width: 30 },
+    { fingerIndex: 3, homeKey: 'F', name: 'Left Index', width: 30 },
+    { fingerIndex: 4, homeKey: 'J', name: 'Right Index', width: 30 },
+    { fingerIndex: 5, homeKey: 'K', name: 'Right Middle', width: 30 },
+    { fingerIndex: 6, homeKey: 'L', name: 'Right Ring', width: 30 },
+    { fingerIndex: 7, homeKey: ';', name: 'Right Pinky', width: 28 },
 ];
 
-type KeyboardVisualProps = { activeKey: string };
+const ALL_FINGERS = FINGER_HOME_KEYS.map(({ fingerIndex, homeKey, name, width }) => {
+    const homePosition = getKeyPosition(homeKey) ?? { x: 0, y: 0 };
+    return { color: FINGER_POSITIONS[fingerIndex].color, homeX: homePosition.x, homeY: homePosition.y, name, width };
+});
 
-export const KeyboardVisual = ({ activeKey }: KeyboardVisualProps) => {
+type KeyboardVisualProps = { activeKey: string; className?: string };
+
+const renderKeyboardKeys = (activeKey: string) => {
+    return KEYBOARD_ROWS.flatMap((row, rowIndex) => {
+        const startX = rowIndex === 1 ? 22 : rowIndex === 2 ? 32 : rowIndex === 3 ? 52 : 12;
+        return row.map((key, keyIndex) => {
+            const x = startX + keyIndex * 40;
+            const y = 40 + rowIndex * 40;
+            const color = getFingerColor(key);
+            const isActive = activeKey && key.toUpperCase() === activeKey.toUpperCase();
+            const keyId = `${rowIndex}-${key}`;
+            return (
+                <g key={keyId}>
+                    <rect
+                        x={x}
+                        y={y}
+                        width="34"
+                        height="34"
+                        rx="4"
+                        fill={isActive ? color : 'url(#keyGradient)'}
+                        stroke={color}
+                        strokeWidth="2"
+                        opacity={isActive ? 1 : 0.8}
+                        filter={isActive ? 'url(#glow)' : undefined}
+                    />
+                    <text
+                        x={x + 17}
+                        y={y + 22}
+                        textAnchor="middle"
+                        fill="white"
+                        fontSize="12"
+                        fontWeight="600"
+                        className="pointer-events-none select-none"
+                    >
+                        {key}
+                    </text>
+                </g>
+            );
+        });
+    });
+};
+
+const renderFingerHighlight = (
+    finger: (typeof ALL_FINGERS)[number],
+    index: number,
+    activeFingerIndex: number,
+    activeKeyPos: { x: number; y: number } | null,
+) => {
+    const isActive = index === activeFingerIndex;
+    const pos = isActive && activeKeyPos ? activeKeyPos : { x: finger.homeX, y: finger.homeY };
+    const baseX = index < 4 ? 140 + index * 25 : 460 - (index - 4) * 25;
+    const baseY = 340;
+    const tipRadius = finger.width / 2;
+
+    return (
+        <Tooltip key={finger.name} delayDuration={0}>
+            <TooltipTrigger asChild>
+                <g className="cursor-pointer" tabIndex={0}>
+                    <path
+                        d={`M ${baseX - finger.width / 2} ${baseY}
+                         L ${pos.x - finger.width / 2} ${pos.y + 15}
+                         Q ${pos.x} ${pos.y - 8}, ${pos.x + finger.width / 2} ${pos.y + 15}
+                         L ${baseX + finger.width / 2} ${baseY} Z`}
+                        fill={finger.color}
+                        opacity={isActive ? 0.95 : 0.75}
+                        filter={isActive ? 'url(#glow)' : 'url(#shadow)'}
+                    />
+                    <ellipse
+                        cx={pos.x}
+                        cy={pos.y + 8}
+                        rx={tipRadius + (isActive ? 2 : 0)}
+                        ry={tipRadius * 1.2 + (isActive ? 2 : 0)}
+                        fill={finger.color}
+                        opacity={isActive ? 1 : 0.8}
+                        filter={isActive ? 'url(#glow)' : 'url(#shadow)'}
+                    />
+                </g>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="center" sideOffset={12} className="translate-y-[-4px]">
+                <p>{finger.name}</p>
+            </TooltipContent>
+        </Tooltip>
+    );
+};
+
+export const KeyboardVisual = ({ activeKey, className }: KeyboardVisualProps) => {
     const activeFingerIndex = useMemo(() => {
         if (!activeKey) {
             return -1;
@@ -36,9 +125,15 @@ export const KeyboardVisual = ({ activeKey }: KeyboardVisualProps) => {
     }, [activeKey]);
 
     return (
-        <TooltipProvider>
-            <div className="relative mx-auto w-full">
-                <svg viewBox="0 0 600 400" className="h-auto w-full">
+        <TooltipProvider delayDuration={150}>
+            <div className={clsx('relative mx-auto w-full', className)}>
+                <svg
+                    viewBox="0 0 600 400"
+                    className="h-auto w-full select-none [cursor:default]"
+                    role="img"
+                    aria-labelledby="keyboard-visual-title"
+                >
+                    <title id="keyboard-visual-title">Typing keyboard with highlighted finger guides</title>
                     <defs>
                         <filter id="shadow">
                             <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3" />
@@ -56,41 +151,7 @@ export const KeyboardVisual = ({ activeKey }: KeyboardVisualProps) => {
                         </linearGradient>
                     </defs>
 
-                    {KEYBOARD_ROWS.map((row, rowIndex) => {
-                        const startX = rowIndex === 1 ? 22 : rowIndex === 2 ? 32 : rowIndex === 3 ? 52 : 12;
-                        return row.map((key, keyIndex) => {
-                            const x = startX + keyIndex * 40;
-                            const y = 40 + rowIndex * 40;
-                            const color = getFingerColor(key);
-                            const isActive = activeKey && key.toUpperCase() === activeKey.toUpperCase();
-                            return (
-                                <g key={`${rowIndex}-${keyIndex}`}>
-                                    <rect
-                                        x={x}
-                                        y={y}
-                                        width="34"
-                                        height="34"
-                                        rx="4"
-                                        fill={isActive ? color : 'url(#keyGradient)'}
-                                        stroke={color}
-                                        strokeWidth="2"
-                                        opacity={isActive ? 1 : 0.8}
-                                        filter={isActive ? 'url(#glow)' : undefined}
-                                    />
-                                    <text
-                                        x={x + 17}
-                                        y={y + 22}
-                                        textAnchor="middle"
-                                        fill="white"
-                                        fontSize="12"
-                                        fontWeight="600"
-                                    >
-                                        {key}
-                                    </text>
-                                </g>
-                            );
-                        });
-                    })}
+                    {renderKeyboardKeys(activeKey)}
 
                     <rect
                         x="120"
@@ -107,43 +168,9 @@ export const KeyboardVisual = ({ activeKey }: KeyboardVisualProps) => {
                         SPACE
                     </text>
 
-                    {ALL_FINGERS.map((finger, index) => {
-                        const isActive = index === activeFingerIndex;
-                        const pos = isActive && activeKeyPos ? activeKeyPos : { x: finger.homeX, y: finger.homeY };
-                        const baseX = index < 4 ? 140 + index * 25 : 460 - (index - 4) * 25;
-                        const baseY = 340;
-                        const tipRadius = finger.width / 2;
-
-                        return (
-                            <Tooltip key={index}>
-                                <TooltipTrigger asChild>
-                                    <g>
-                                        <path
-                                            d={`M ${baseX - finger.width / 2} ${baseY}
-                         L ${pos.x - finger.width / 2} ${pos.y + 15}
-                         Q ${pos.x} ${pos.y - 8}, ${pos.x + finger.width / 2} ${pos.y + 15}
-                         L ${baseX + finger.width / 2} ${baseY} Z`}
-                                            fill={finger.color}
-                                            opacity={isActive ? 0.95 : 0.75}
-                                            filter={isActive ? 'url(#glow)' : 'url(#shadow)'}
-                                        />
-                                        <ellipse
-                                            cx={pos.x}
-                                            cy={pos.y + 8}
-                                            rx={tipRadius + (isActive ? 2 : 0)}
-                                            ry={tipRadius * 1.2 + (isActive ? 2 : 0)}
-                                            fill={finger.color}
-                                            opacity={isActive ? 1 : 0.8}
-                                            filter={isActive ? 'url(#glow)' : 'url(#shadow)'}
-                                        />
-                                    </g>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{finger.name}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        );
-                    })}
+                    {ALL_FINGERS.map((finger, index) =>
+                        renderFingerHighlight(finger, index, activeFingerIndex, activeKeyPos),
+                    )}
                 </svg>
             </div>
         </TooltipProvider>

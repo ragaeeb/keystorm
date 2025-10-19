@@ -11,7 +11,8 @@ export const getKeyPosition = (key: string): { x: number; y: number } | null => 
         const keyIndex = KEYBOARD_ROWS[rowIndex].indexOf(key);
         if (keyIndex !== -1) {
             const startX = rowIndex === 1 ? 22 : rowIndex === 2 ? 32 : rowIndex === 3 ? 52 : 12;
-            return { x: startX + keyIndex * 40 + 18, y: 60 + rowIndex * 45 + 18 };
+            const baseY = 40 + rowIndex * 40;
+            return { x: startX + keyIndex * 40 + 17, y: baseY + 17 };
         }
     }
     return null;
