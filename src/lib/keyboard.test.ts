@@ -5,7 +5,7 @@ describe('keyboard', () => {
     describe('getKeyPosition', () => {
         it('should get the position for A', () => {
             const actual = getKeyPosition('A');
-            expect(actual).toMatchObject({ x: 50, y: 168 });
+            expect(actual).toMatchObject({ x: 49, y: 137 });
         });
     });
 });

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { NextAuthOptions } from 'next-auth';
-import NextAuth, { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
 import { deleteLoginCode, getLoginCode } from '@/lib/redis';
@@ -68,9 +68,6 @@ export const authOptions: NextAuthOptions = {
     secret: process.env.AUTH_SECRET,
     session: { strategy: 'jwt' },
 };
-
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
 
 export const auth = () => getServerSession(authOptions);
 
