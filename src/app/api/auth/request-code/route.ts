@@ -42,6 +42,18 @@ export const POST = async (request: NextRequest) => {
         }
 
         const email = parsed.data.email.trim().toLowerCase();
+        // Basic per-email limit: 3 requests / 10 minutes
+        const rlKey = `auth:otp:requests:${email}`;
+        try {
+            const n = await redis.incr(rlKey);
+            if (n === 1) await redis.expire(rlKey, REQUEST_WINDOW);
+            if (n > MAX_REQUESTS) {
+                return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+            }
+        } catch (e) {
+            console.warn('OTP request rate-limit error', e);
+        }
+
         const code = generateCode();
         const codeHash = hashCode(code);
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
