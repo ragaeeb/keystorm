@@ -1,7 +1,9 @@
 import { sql } from 'drizzle-orm';
-import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { integer, sqliteTableCreator, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
-export const users = sqliteTable(
+const createTable = sqliteTableCreator((name) => name);
+
+export const users = createTable(
     'users',
     {
         email: text('email').notNull().unique(),
@@ -10,10 +12,10 @@ export const users = sqliteTable(
         image: text('image'),
         name: text('name'),
     },
-    (table) => ({ emailIdx: uniqueIndex('users_email_idx').on(table.email) }),
+    (table) => [uniqueIndex('users_email_idx').on(table.email)],
 );
 
-export const accounts = sqliteTable(
+export const accounts = createTable(
     'accounts',
     {
         accessToken: text('access_token'),
@@ -31,15 +33,10 @@ export const accounts = sqliteTable(
             .notNull()
             .references(() => users.id, { onDelete: 'cascade' }),
     },
-    (table) => ({
-        providerProviderAccountIdIdx: uniqueIndex('accounts_provider_provider_account_id_idx').on(
-            table.provider,
-            table.providerAccountId,
-        ),
-    }),
+    (table) => [uniqueIndex('accounts_provider_provider_account_id_idx').on(table.provider, table.providerAccountId)],
 );
 
-export const sessions = sqliteTable('sessions', {
+export const sessions = createTable('sessions', {
     expires: integer('expires', { mode: 'timestamp_ms' }).notNull(),
     id: text('id').primaryKey().default(sql`lower(hex(randomblob(16)))`),
     sessionToken: text('session_token').notNull().unique(),
@@ -48,19 +45,17 @@ export const sessions = sqliteTable('sessions', {
         .references(() => users.id, { onDelete: 'cascade' }),
 });
 
-export const verificationTokens = sqliteTable(
+export const verificationTokens = createTable(
     'verification_token',
     {
         expires: integer('expires', { mode: 'timestamp_ms' }).notNull(),
         identifier: text('identifier').notNull(),
         token: text('token').notNull(),
     },
-    (table) => ({
-        identifierTokenIdx: uniqueIndex('verification_token_identifier_token_idx').on(table.identifier, table.token),
-    }),
+    (table) => [uniqueIndex('verification_token_identifier_token_idx').on(table.identifier, table.token)],
 );
 
-export const loginCodes = sqliteTable(
+export const loginCodes = createTable(
     'login_codes',
     {
         codeHash: text('code_hash').notNull(),
@@ -69,5 +64,5 @@ export const loginCodes = sqliteTable(
         expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
         id: integer('id').primaryKey({ autoIncrement: true }),
     },
-    (table) => ({ emailIdx: uniqueIndex('login_codes_email_idx').on(table.email) }),
+    (table) => [uniqueIndex('login_codes_email_idx').on(table.email)],
 );

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { eq } from 'drizzle-orm';
 import type { NextAuthOptions } from 'next-auth';
-import NextAuth from 'next-auth';
+import NextAuth, { getServerSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
 import { db, ensureDatabase } from '@/lib/db';
@@ -68,7 +68,7 @@ export const authOptions: NextAuthOptions = {
                     return null;
                 }
 
-                if (storedCode.expiresAt <= Date.now()) {
+                if (storedCode.expiresAt.getTime() <= Date.now()) {
                     await db.delete(loginCodes).where(eq(loginCodes.email, email));
                     return null;
                 }
@@ -103,5 +103,6 @@ export const authOptions: NextAuthOptions = {
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
 
-export { auth } from 'next-auth';
+export const auth = () => getServerSession(authOptions);
+
 export { signIn, signOut } from 'next-auth/react';

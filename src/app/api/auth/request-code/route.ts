@@ -51,7 +51,7 @@ export const POST = async (request: NextRequest) => {
         const email = parsed.data.email.trim().toLowerCase();
         const code = generateCode();
         const codeHash = hashCode(code);
-        const expiresAt = Date.now() + 10 * 60 * 1000;
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
         await ensureDatabase();
         await db.delete(loginCodes).where(eq(loginCodes.email, email));
