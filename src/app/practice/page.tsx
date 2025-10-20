@@ -239,7 +239,7 @@ type PracticeViewProps = {
     gameState: 'ready' | 'playing' | 'finished';
     handleInputChange: (event: ChangeEvent<HTMLInputElement>) => void;
     handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
-    inputRef: React.RefObject<HTMLInputElement>;
+    inputRef: React.RefObject<HTMLInputElement | null>;
     isLastLesson: boolean;
     levelComplete: boolean;
     nextChar: string;

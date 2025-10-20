@@ -48,6 +48,7 @@ const loginCodeKey = (email: string) => `login-code:${email}`;
 
 export const saveLoginCode = async (email: string, codeHash: string, expiresAt: number, ttlSeconds: number) => {
     const key = loginCodeKey(email);
+
     if (redisClient) {
         await redisClient.set(key, JSON.stringify({ codeHash, expiresAt }), { ex: ttlSeconds });
         return;
@@ -57,13 +58,15 @@ export const saveLoginCode = async (email: string, codeHash: string, expiresAt: 
 
 export const getLoginCode = async (email: string): Promise<LoginCodeRecord | null> => {
     const key = loginCodeKey(email);
+
     if (redisClient) {
-        const raw = await redisClient.get<string | null>(key);
-        if (!raw) {
-            return null;
-        }
         try {
-            const parsed = JSON.parse(raw) as LoginCodeRecord;
+            const parsed = await redisClient.get<LoginCodeRecord | null>(key);
+
+            if (!parsed) {
+                return null;
+            }
+
             return parsed;
         } catch (error) {
             console.error('Failed to parse login code from Redis', error);

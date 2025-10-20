@@ -59,8 +59,7 @@ AUTH_SECRET=generate_a_long_random_string
 UPSTASH_REDIS_REST_URL=https://your-upstash-url.upstash.io
 UPSTASH_REDIS_REST_TOKEN=your_upstash_token
 RESEND_API_KEY=your_resend_api_key
-EMAIL_FROM="KeyStorm <login@mail.synonymous2.com>"
-ENV
+EMAIL_FROM="KeyStorm <login@mail.domain.com>"
 ```
 
 > 💡 If you skip the Resend API key locally, one-time codes are logged to the terminal for easy testing.

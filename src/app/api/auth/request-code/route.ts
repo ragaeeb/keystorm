@@ -13,15 +13,13 @@ const hashCode = (code: string) => createHash('sha256').update(code).digest('hex
 const resendClient = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const sendEmail = async (email: string, code: string) => {
-    const from = process.env.EMAIL_FROM ?? 'KeyStorm <login@mail.synonymous2.com>';
-
     if (!resendClient) {
         console.info(`Login code for ${email}: ${code}`);
         return;
     }
 
     const { error } = await resendClient.emails.send({
-        from,
+        from: process.env.EMAIL_FROM!,
         subject: 'Your KeyStorm sign-in code',
         text: `Your one-time code is ${code}. It expires in 10 minutes.`,
         to: email,
