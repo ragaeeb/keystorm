@@ -129,7 +129,7 @@ const EmailCodeForm = ({ onStart, status }: EmailCodeFormProps) => {
                         onChange={(event) => setEmail(event.target.value)}
                         placeholder="you@example.com"
                         autoComplete="email"
-                        disabled={sending || verifying || isLoadingSession}
+                        disabled={sending || verifying || isLoadingSession || step === 'code'}
                     />
                 </div>
 

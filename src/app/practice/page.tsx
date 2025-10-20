@@ -52,13 +52,13 @@ const usePracticeLessons = (
         const storedLessons = sessionStorage.getItem('lessons');
         const lettersCompleted = sessionStorage.getItem('lettersCompleted');
 
-        sessionStorage.removeItem('practiceSummary');
-        onReset();
-
         if (lettersCompleted !== 'true') {
             router.replace('/practice/letters');
             return;
         }
+
+        sessionStorage.removeItem('practiceSummary');
+        onReset();
 
         setMounted(true);
 

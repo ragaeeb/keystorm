@@ -1,20 +1,22 @@
-const bannedPhrases = [
-    'sex',
-    'sexual',
-    'violence',
-    'violent',
-    'murder',
-    'kill',
-    'killing',
-    'weapon',
-    'porn',
-    'terror',
-    'extremism',
-    'drugs',
-    'gambling',
-    'alcohol',
-    'hate',
-];
+const wordBoundaryPattern = new RegExp(
+    `\\b(${[
+        'sex',
+        'sexual',
+        'violence',
+        'violent',
+        'murder',
+        'kill',
+        'killing',
+        'weapon',
+        'porn',
+        'terror',
+        'extremism',
+        'drugs',
+        'gambling',
+        'alcohol',
+        'hate',
+    ].join('|')})\\b`,
+);
 
 export const isThemeAllowed = (theme: string) => {
     const cleaned = theme.trim().toLowerCase();
@@ -27,5 +29,5 @@ export const isThemeAllowed = (theme: string) => {
         return false;
     }
 
-    return !bannedPhrases.some((phrase) => cleaned.includes(phrase));
+    return !wordBoundaryPattern.test(cleaned);
 };

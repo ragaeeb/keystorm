@@ -74,7 +74,9 @@ export const generateWithGemini = async (
             console.error(`[API ${redactedKey}] Error on attempt ${attempt + 1}:`, error.message);
             lastError = error;
 
-            if (RATE_LIMIT_KEYWORDS.some((k) => error.message?.includes(k))) {
+            const msg = String(error.message || '').toLowerCase();
+
+            if (RATE_LIMIT_KEYWORDS.some((k) => msg.includes(k.toLowerCase()))) {
                 const waitTime = Math.min(2 ** attempt * 1000, 30000);
                 console.log(`[API ${redactedKey}] Rate limited. Waiting ${waitTime}ms...`);
                 await setTimeout(waitTime);

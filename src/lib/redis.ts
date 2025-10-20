@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Redis } from '@upstash/redis';
 
 const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
@@ -44,7 +45,8 @@ const deleteMemory = (key: string) => {
     memoryStore.delete(key);
 };
 
-const loginCodeKey = (email: string) => `login-code:${email}`;
+const loginCodeKey = (email: string) =>
+    `login-code:${createHash('sha256').update(email.trim().toLowerCase()).digest('hex')}`;
 
 export const saveLoginCode = async (email: string, codeHash: string, expiresAt: number, ttlSeconds: number) => {
     const key = loginCodeKey(email);

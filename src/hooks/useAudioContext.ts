@@ -5,7 +5,7 @@ export const useAudioContext = () => {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            audioContextRef.current = new window.AudioContext();
         }
         return () => {
             if (audioContextRef.current) {

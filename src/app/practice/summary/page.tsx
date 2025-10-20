@@ -42,6 +42,13 @@ export default function PracticeSummaryPage() {
         if (stored) {
             try {
                 const parsed = JSON.parse(stored) as PracticeSummary;
+
+                if (!parsed.levels || !Array.isArray(parsed.levels) || !parsed.overall) {
+                    console.error('Invalid practice summary structure');
+                    setLoading(false);
+                    return;
+                }
+
                 setSummary(parsed);
             } catch (error) {
                 console.error('Failed to parse practice summary', error);
@@ -54,7 +61,7 @@ export default function PracticeSummaryPage() {
         if (!summary) {
             return [];
         }
-        return [...summary.levels].sort((a, b) => a.level - b.level);
+        return summary.levels.toSorted((a, b) => a.level - b.level);
     }, [summary]);
 
     const completionDate = summary?.completedAt ? new Date(summary.completedAt) : null;

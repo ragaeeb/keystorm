@@ -84,7 +84,7 @@ bun run dev
 
 ## Project Structure
 
-```
+```text
 keystorm/
 ├── src/
 │   ├── app/
@@ -182,13 +182,13 @@ Generates personalized typing lessons based on a theme. Requires an authenticate
 
 ## Contributing
 
-Contributions are welcome! Please follow these guidelines:
+Contributions are welcome. Please follow these guidelines:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
+3. Commit your changes (`git commit -m 'Add feature description'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+5. Open a pull request
 
 ## License
 

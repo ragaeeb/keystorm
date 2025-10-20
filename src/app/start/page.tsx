@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { DEFAULT_ISLAMIC_LESSONS } from '@/lib/default-lessons';
 import type { Lesson } from '@/types/lesson';
 
-const storeLessons = (lessons: Lesson[]) => {
+const storeLessons = (lessons: ReadonlyArray<Lesson>) => {
     sessionStorage.setItem('lessons', JSON.stringify(lessons));
     sessionStorage.setItem('lettersCompleted', 'false');
 };

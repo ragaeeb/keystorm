@@ -1,6 +1,6 @@
 import type { Lesson } from '@/types/lesson';
 
-export const DEFAULT_ISLAMIC_LESSONS: Lesson[] = [
+export const DEFAULT_ISLAMIC_LESSONS: ReadonlyArray<Lesson> = [
     {
         content: [
             'a',
