@@ -29,7 +29,9 @@ export const POST = async (request: NextRequest) => {
         const lessons = await generateLessons(theme);
         return NextResponse.json({ lessons });
     } catch (error) {
-        console.error('Error generating lessons:', error);
+        console.error('Error generating lessons:', { 
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
         return NextResponse.json({ error: 'Failed to generate lessons' }, { status: 500 });
     }
 };
