@@ -6,7 +6,9 @@ import { deleteLoginCode, saveLoginCode } from '@/lib/redis';
 
 const requestSchema = z.object({ email: z.string().email() });
 
-const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+import { randomInt } from 'node:crypto';
+
+const generateCode = () => randomInt(100000, 1000000).toString();
 
 const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
 
