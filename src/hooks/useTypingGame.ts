@@ -1,4 +1,3 @@
-// FILE: src/hooks/useTypingGame.ts
 import { useCallback, useRef, useState } from 'react';
 
 export type TypingState = { userInput: string; startTime: number | null; errors: number; backspaceCount: number };
@@ -6,7 +5,7 @@ export type TypingState = { userInput: string; startTime: number | null; errors:
 type UseTypingGameReturn = {
     typingState: TypingState;
     gameState: 'ready' | 'playing' | 'finished';
-    inputRef: React.RefObject<HTMLInputElement>;
+    inputRef: React.RefObject<HTMLInputElement | null>;
     startGame: () => void;
     handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     resetGame: () => void;

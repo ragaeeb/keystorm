@@ -3,7 +3,7 @@
 import { Keyboard, LogIn, LogOut, Target, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
-import type { Session, SessionStatus } from 'next-auth';
+import type { Session } from 'next-auth';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ type AuthPanelProps = { onStart: () => void };
 
 type SignedInPanelProps = { onStart: () => void; session: Session };
 
-type EmailCodeFormProps = { onStart: () => void; status: SessionStatus };
+type EmailCodeFormProps = { onStart: () => void; status: 'authenticated' | 'unauthenticated' | 'loading' };
 
 const SignedInPanel = ({ onStart, session }: SignedInPanelProps) => {
     const handleSignOut = useCallback(async () => {

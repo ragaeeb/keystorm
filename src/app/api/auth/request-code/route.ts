@@ -1,10 +1,8 @@
 import { createHash } from 'node:crypto';
-import { eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { z } from 'zod';
-import { db, ensureDatabase } from '@/lib/db';
-import { loginCodes } from '@/lib/schema';
+import { deleteLoginCode, saveLoginCode } from '@/lib/redis';
 
 const requestSchema = z.object({ email: z.string().email() });
 
@@ -12,31 +10,24 @@ const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString(
 
 const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
 
-const sendEmail = async (email: string, code: string) => {
-    const host = process.env.SMTP_HOST;
-    const user = process.env.SMTP_USER;
-    const password = process.env.SMTP_PASSWORD;
-    const from = process.env.EMAIL_FROM ?? 'no-reply@keystorm.app';
-    const port = Number.parseInt(process.env.SMTP_PORT ?? '587', 10);
+const resendClient = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-    if (!host || !user || !password) {
+const sendEmail = async (email: string, code: string) => {
+    if (!resendClient) {
         console.info(`Login code for ${email}: ${code}`);
         return;
     }
 
-    const transporter = nodemailer.createTransport({
-        auth: { pass: password, user },
-        host,
-        port,
-        secure: port === 465,
-    });
-
-    await transporter.sendMail({
-        from,
+    const { error } = await resendClient.emails.send({
+        from: process.env.EMAIL_FROM!,
         subject: 'Your KeyStorm sign-in code',
         text: `Your one-time code is ${code}. It expires in 10 minutes.`,
         to: email,
     });
+
+    if (error) {
+        throw error;
+    }
 };
 
 export const POST = async (request: NextRequest) => {
@@ -53,9 +44,9 @@ export const POST = async (request: NextRequest) => {
         const codeHash = hashCode(code);
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-        await ensureDatabase();
-        await db.delete(loginCodes).where(eq(loginCodes.email, email));
-        await db.insert(loginCodes).values({ codeHash, email, expiresAt });
+        const ttlSeconds = Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / 1000));
+        await deleteLoginCode(email);
+        await saveLoginCode(email, codeHash, expiresAt.getTime(), ttlSeconds);
 
         await sendEmail(email, code);
 
