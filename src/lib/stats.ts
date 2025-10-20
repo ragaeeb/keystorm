@@ -12,12 +12,13 @@ export const calculateGameStats = (
     }
 
     const timeElapsed = Date.now() - startTime;
-    const words = userInput.trim().split(' ').filter(Boolean).length || 0;
+    const words = userInput.trim().split(/\s+/).filter(Boolean).length;
     const minutes = Math.max(timeElapsed / 60000, 0.001);
     const wpm = Math.round(words / minutes) || 0;
 
     let correctChars = 0;
-    for (let i = 0; i < userInput.length; i++) {
+    const len = Math.min(userInput.length, targetText.length);
+    for (let i = 0; i < len; i++) {
         if (userInput[i] === targetText[i]) {
             correctChars++;
         }
@@ -25,7 +26,8 @@ export const calculateGameStats = (
 
     const totalChars = userInput.length || 1;
     const errorPenalty = backspaceCount * 0.5;
-    const accuracy = Math.max(0, Math.round((correctChars / totalChars) * 100 - errorPenalty));
+    const accuracyRaw = (correctChars / totalChars) * 100 - errorPenalty;
+    const accuracy = Math.min(100, Math.max(0, Math.round(accuracyRaw)));
 
     return { accuracy, errors, wpm };
 };
