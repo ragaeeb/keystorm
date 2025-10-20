@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { type NextRequest, NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { z } from 'zod';
 import { deleteLoginCode, saveLoginCode } from '@/lib/redis';
 
@@ -10,31 +10,26 @@ const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString(
 
 const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
 
-const sendEmail = async (email: string, code: string) => {
-    const host = process.env.SMTP_HOST;
-    const user = process.env.SMTP_USER;
-    const password = process.env.SMTP_PASSWORD;
-    const from = process.env.EMAIL_FROM ?? 'no-reply@keystorm.app';
-    const port = Number.parseInt(process.env.SMTP_PORT ?? '587', 10);
+const resendClient = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-    if (!host || !user || !password) {
+const sendEmail = async (email: string, code: string) => {
+    const from = process.env.EMAIL_FROM ?? 'KeyStorm <login@mail.synonymous2.com>';
+
+    if (!resendClient) {
         console.info(`Login code for ${email}: ${code}`);
         return;
     }
 
-    const transporter = nodemailer.createTransport({
-        auth: { pass: password, user },
-        host,
-        port,
-        secure: port === 465,
-    });
-
-    await transporter.sendMail({
+    const { error } = await resendClient.emails.send({
         from,
         subject: 'Your KeyStorm sign-in code',
         text: `Your one-time code is ${code}. It expires in 10 minutes.`,
         to: email,
     });
+
+    if (error) {
+        throw error;
+    }
 };
 
 export const POST = async (request: NextRequest) => {

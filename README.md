@@ -35,8 +35,8 @@ A modern, AI-powered touch typing tutor that generates personalized lessons base
 
 - Bun 1.3.0 or higher
 - Google Gemini API key
-- Turso (or another libSQL-compatible) database for passwordless auth codes
-- SMTP credentials (optional locally; required to email login codes in production)
+- Upstash Redis (or another Redis-compatible) database for passwordless auth codes
+- Resend API key (optional locally; required to email login codes in production)
 
 ### Installation
 
@@ -56,18 +56,14 @@ bun install
 cat <<'ENV' > .env.local
 GEMINI_API_KEY=your_api_key_here
 AUTH_SECRET=generate_a_long_random_string
-DATABASE_URL=libsql://your-database-url.turso.io
-DATABASE_AUTH_TOKEN=your_turso_auth_token
-EMAIL_FROM="KeyStorm <no-reply@keystorm.app>"
-# Optional in development: omit these to log login codes to the console
-SMTP_HOST=smtp.yourprovider.com
-SMTP_PORT=587
-SMTP_USER=your_smtp_user
-SMTP_PASSWORD=your_smtp_password
+UPSTASH_REDIS_REST_URL=https://your-upstash-url.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_upstash_token
+RESEND_API_KEY=your_resend_api_key
+EMAIL_FROM="KeyStorm <login@mail.synonymous2.com>"
 ENV
 ```
 
-> 💡 If you skip the SMTP settings locally, one-time codes are logged to the terminal for easy testing.
+> 💡 If you skip the Resend API key locally, one-time codes are logged to the terminal for easy testing.
 
 4. Run the development server:
 ```bash
@@ -114,15 +110,14 @@ keystorm/
 │   ├── hooks/
 │   │   └── useTypingGame.ts          # Custom hook for typing logic
 │   ├── lib/
-│   │   ├── db.ts                     # Drizzle/Turso client
 │   │   ├── default-lessons.ts        # Guest-mode lessons
 │   │   ├── gemini.ts                 # Gemini API client
 │   │   ├── lesson-generator.ts       # Lesson content generation
-│   │   ├── schema.ts                 # Auth database schema
+│   │   ├── redis.ts                  # Login code storage helper
+│   │   ├── stats.ts                  # WPM and accuracy calculations
 │   │   └── theme-validation.ts       # Theme safety checks
 │   └── utils/
-│       ├── keyboard-utils.ts         # Keyboard position utilities
-│       └── stats-calculator.ts       # WPM and accuracy calculations
+│       └── keyboard-utils.ts         # Keyboard position utilities
 ├── package.json
 ├── tsconfig.json
 └── README.md
