@@ -23,7 +23,7 @@ export const isThemeAllowed = (theme: string) => {
         return false;
     }
 
-    if (!/^[a-z0-9\s\-&]+$/i.test(theme)) {
+    if (!/^[a-z0-9\s\-&]+$/.test(cleaned)) {
         return false;
     }
 
