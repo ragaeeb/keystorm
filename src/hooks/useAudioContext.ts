@@ -7,6 +7,11 @@ export const useAudioContext = () => {
         if (typeof window !== 'undefined') {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
+        return () => {
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+            }
+        };
     }, []);
 
     const playErrorSound = useCallback(() => {
