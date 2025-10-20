@@ -1,4 +1,3 @@
-// FILE: src/components/typing/KeyboardVisual.tsx
 'use client';
 
 import { clsx } from 'clsx';
@@ -45,7 +44,7 @@ const renderKeyboardKeys = (activeKey: string) => {
                         fill={isActive ? color : 'url(#keyGradient)'}
                         stroke={color}
                         strokeWidth="2"
-                        opacity={isActive ? 1 : 0.8}
+                        opacity={isActive ? 0.95 : 0.35}
                         filter={isActive ? 'url(#glow)' : undefined}
                     />
                     <text
@@ -96,7 +95,7 @@ const renderFingerHighlight = (
                         rx={tipRadius + (isActive ? 2 : 0)}
                         ry={tipRadius * 1.2 + (isActive ? 2 : 0)}
                         fill={finger.color}
-                        opacity={isActive ? 1 : 0.8}
+                        opacity={isActive ? 0.45 : 0.65}
                         filter={isActive ? 'url(#glow)' : 'url(#shadow)'}
                     />
                 </g>

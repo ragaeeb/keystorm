@@ -3,6 +3,7 @@
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import ConfettiBoom from 'react-confetti-boom';
 import { KeyboardVisual } from '@/components/typing/KeyboardVisual';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +22,7 @@ export default function LetterPracticePage() {
     const [letters, setLetters] = useState<string[]>(LETTER_LESSON?.content ?? []);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [mounted, setMounted] = useState(false);
+    const [showConfetti, setShowConfetti] = useState(false);
 
     const currentLetter = letters[currentIndex] ?? '';
 
@@ -86,6 +88,12 @@ export default function LetterPracticePage() {
             return;
         }
 
+        // Show confetti for perfect letter completion (no errors)
+        if (typingState.errors === 0) {
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 2000);
+        }
+
         const timeout = setTimeout(() => {
             if (currentIndex < letters.length - 1) {
                 setCurrentIndex((prev) => prev + 1);
@@ -96,7 +104,7 @@ export default function LetterPracticePage() {
         }, 250);
 
         return () => clearTimeout(timeout);
-    }, [currentIndex, gameState, letters.length, router]);
+    }, [currentIndex, gameState, letters.length, router, typingState.errors]);
 
     const handleSkip = useCallback(() => {
         sessionStorage.setItem('lettersCompleted', 'true');
@@ -105,6 +113,14 @@ export default function LetterPracticePage() {
 
     return (
         <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
+            {showConfetti && (
+                <ConfettiBoom
+                    particleCount={50}
+                    effectCount={2}
+                    effectInterval={300}
+                    colors={['#8BC34A', '#FF5252', '#FFB74D', '#4DD0E1', '#81C784', '#EC407A', '#AB47BC', '#5C6BC0']}
+                />
+            )}
             <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
                 <Card className="flex flex-1 flex-col">
                     <CardHeader className="border-b bg-white/90 py-4 backdrop-blur">

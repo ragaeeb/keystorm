@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { eq } from 'drizzle-orm';
+import type { NextAuthOptions } from 'next-auth';
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
@@ -28,13 +29,8 @@ const adapter = new Proxy(rawAdapter, {
     },
 });
 
-export const {
-    auth,
-    handlers: { GET, POST },
-    signIn,
-    signOut,
-} = NextAuth({
-    adapter: adapter,
+export const authOptions: NextAuthOptions = {
+    adapter: adapter as any,
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
@@ -102,4 +98,10 @@ export const {
     ],
     secret: process.env.AUTH_SECRET,
     session: { strategy: 'jwt' },
-});
+};
+
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
+
+export { auth } from 'next-auth';
+export { signIn, signOut } from 'next-auth/react';

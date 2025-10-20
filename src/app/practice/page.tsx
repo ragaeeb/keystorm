@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import ConfettiBoom from 'react-confetti-boom';
 import { KeyboardVisual } from '@/components/typing/KeyboardVisual';
 import { StatsDisplay } from '@/components/typing/StatsDisplay';
 import { TextDisplay } from '@/components/typing/TextDisplay';
@@ -24,6 +25,8 @@ export default function PracticePage() {
     const [activeLesson, setActiveLesson] = useState<ActiveLesson | null>(null);
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
     const [mounted, setMounted] = useState(false);
+    const [showConfetti, setShowConfetti] = useState(false);
+    const [levelComplete, setLevelComplete] = useState(false);
 
     const { playErrorSound } = useAudioContext();
 
@@ -88,15 +91,40 @@ export default function PracticePage() {
         return () => window.removeEventListener('keydown', handleKeyStart);
     }, [gameState, startGame]);
 
+    useEffect(() => {
+        if (gameState !== 'finished' || !activeLesson) {
+            return;
+        }
+
+        // Check if it's a perfect score
+        if (stats.accuracy === 100 && stats.errors === 0) {
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 3000);
+        }
+
+        // Check if this is the last item in the level
+        const isLastItemInLevel = currentItemIndex === activeLesson.content.length - 1;
+
+        if (isLastItemInLevel) {
+            // Mark level as complete, user needs to press Enter to continue
+            setLevelComplete(true);
+        } else {
+            // Automatically move to next item
+            const timeout = setTimeout(() => {
+                setCurrentItemIndex((prev) => prev + 1);
+                resetGame();
+                startGame();
+            }, 250);
+            return () => clearTimeout(timeout);
+        }
+    }, [gameState, activeLesson, currentItemIndex, stats, resetGame, startGame]);
+
     const handleNext = useCallback(() => {
         if (!activeLesson) {
             return;
         }
-        if (currentItemIndex < activeLesson.content.length - 1) {
-            setCurrentItemIndex((prev) => prev + 1);
-            resetGame();
-            return;
-        }
+
+        setLevelComplete(false);
 
         if (activeLesson.index < lessons.length - 1) {
             const nextLesson = lessons[activeLesson.index + 1];
@@ -107,16 +135,16 @@ export default function PracticePage() {
         }
 
         router.push('/learn');
-    }, [activeLesson, currentItemIndex, lessons, resetGame, router]);
+    }, [activeLesson, lessons, resetGame, router]);
 
     const handleSubmit = useCallback(
         (event: FormEvent<HTMLFormElement>) => {
             event.preventDefault();
-            if (gameState === 'finished') {
+            if (levelComplete) {
                 handleNext();
             }
         },
-        [gameState, handleNext],
+        [levelComplete, handleNext],
     );
 
     if (!mounted || !activeLesson) {
@@ -131,6 +159,14 @@ export default function PracticePage() {
 
     return (
         <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
+            {showConfetti && (
+                <ConfettiBoom
+                    particleCount={100}
+                    effectCount={3}
+                    effectInterval={400}
+                    colors={['#8BC34A', '#FF5252', '#FFB74D', '#4DD0E1', '#81C784', '#EC407A', '#AB47BC', '#5C6BC0']}
+                />
+            )}
             <div className="mx-auto w-full max-w-6xl flex-1">
                 <Card className="flex h-full flex-col">
                     <CardHeader className="border-b bg-white/90 py-3 backdrop-blur">
@@ -142,7 +178,9 @@ export default function PracticePage() {
                                         ? 'Press Enter to start'
                                         : gameState === 'playing'
                                           ? `Type the ${activeLesson.type}`
-                                          : 'Complete!'}
+                                          : levelComplete
+                                            ? 'Level complete! Press Enter for next level'
+                                            : 'Keep going!'}
                                 </CardDescription>
                             </div>
                             <StatsDisplay stats={stats} />
@@ -200,7 +238,7 @@ export default function PracticePage() {
                                             autoCapitalize="off"
                                         />
 
-                                        {gameState === 'finished' && (
+                                        {levelComplete && (
                                             <div className="flex justify-center">
                                                 <Button
                                                     type="submit"
