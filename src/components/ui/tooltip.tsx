@@ -16,7 +16,7 @@ const TOOLTIP_CONTENT_CLASSES = [
     'data-[state=closed]:fade-out-0',
     'data-[state=closed]:zoom-out-95',
     'fade-in-0',
-    'origin-(--radix-tooltip-content-transform-origin)',
+    'origin-[--radix-tooltip-content-transform-origin]',
     'px-3',
     'py-1.5',
     'rounded-md',

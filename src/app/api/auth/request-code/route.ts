@@ -1,10 +1,15 @@
 import { createHash } from 'node:crypto';
+import { Redis } from '@upstash/redis';
 import { type NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { z } from 'zod';
 import { deleteLoginCode, saveLoginCode } from '@/lib/redis';
 
-const requestSchema = z.object({ email: z.string().email() });
+const redis = Redis.fromEnv();
+const REQUEST_WINDOW = 10 * 60; // 10 minutes
+const MAX_REQUESTS = 3;
+
+const requestSchema = z.object({ email: z.email() });
 
 import { randomInt } from 'node:crypto';
 
@@ -46,7 +51,9 @@ export const POST = async (request: NextRequest) => {
         const rlKey = `auth:otp:requests:${email}`;
         try {
             const n = await redis.incr(rlKey);
-            if (n === 1) await redis.expire(rlKey, REQUEST_WINDOW);
+            if (n === 1) {
+                await redis.expire(rlKey, REQUEST_WINDOW);
+            }
             if (n > MAX_REQUESTS) {
                 return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
             }

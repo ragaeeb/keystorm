@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DEFAULT_ISLAMIC_LESSONS } from '@/lib/default-lessons';
+import { isThemeAllowed } from '@/lib/theme-validation';
 import type { Lesson } from '@/types/lesson';
 
 const storeLessons = (lessons: ReadonlyArray<Lesson>) => {
@@ -44,6 +45,11 @@ export default function StartPage() {
 
         if (!theme.trim()) {
             setError('Please enter a theme.');
+            return;
+        }
+
+        if (!isThemeAllowed(theme.trim())) {
+            setError('This theme is not allowed. Please choose a family-friendly topic.');
             return;
         }
 
