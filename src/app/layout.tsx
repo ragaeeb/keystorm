@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Providers } from './providers';
 import './globals.css';
 import { Footer } from '@/components/footer';
 
@@ -13,10 +14,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     return (
         <html lang="en">
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-                <main>
-                    {children}
-                    <Footer />
-                </main>
+                <Providers>
+                    <main>
+                        {children}
+                        <Footer />
+                    </main>
+                </Providers>
             </body>
         </html>
     );

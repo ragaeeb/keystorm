@@ -1,6 +1,7 @@
 // app/learn/page.tsx
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import FingerLegend from '@/components/typing/FingerLegend';
@@ -34,12 +35,13 @@ export default function LearnPage() {
                     <CardContent>
                         {/* Image hero (Wikimedia Commons, CC BY-SA 3.0) */}
                         <figure className="relative mx-auto w-full max-w-[980px]">
-                            <img
+                            <Image
                                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Keyboard_layout_english_fingers.png/960px-Keyboard_layout_english_fingers.png"
                                 alt="Hands resting on ASDF and JKL; home-row keys with color-coded finger zones"
                                 className="h-auto w-full rounded-lg bg-black/90 shadow-2xl"
-                                loading="eager"
-                                decoding="async"
+                                width={960}
+                                height={360}
+                                priority
                             />
                             <figcaption className="mt-2 text-center text-muted-foreground text-xs">
                                 “Keyboard layout english fingers.png” • CC BY-SA 3.0 (Wikimedia Commons).
