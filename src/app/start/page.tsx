@@ -64,6 +64,10 @@ export default function StartPage() {
 
             const data = await response.json();
 
+            if (!Array.isArray(data.lessons)) {
+                throw new Error('Invalid response format from API');
+            }
+
             storeLessons(data.lessons as Lesson[]);
             if (name.trim()) {
                 sessionStorage.setItem('userName', name.trim());
