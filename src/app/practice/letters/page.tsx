@@ -53,9 +53,11 @@ export default function LetterPracticePage() {
         }
         resetGame();
         startGame();
-        const element = inputRef.current;
-        setTimeout(() => element?.focus(), 100);
-        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => {
+            const el = inputRef.current;
+            el?.focus();
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
     }, [currentLetter, inputRef, mounted, resetGame, startGame]);
 
     const progress = useMemo(() => {
