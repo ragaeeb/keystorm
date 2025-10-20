@@ -1,10 +1,8 @@
 import { createHash } from 'node:crypto';
-import { eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
-import { db, ensureDatabase } from '@/lib/db';
-import { loginCodes } from '@/lib/schema';
+import { deleteLoginCode, saveLoginCode } from '@/lib/redis';
 
 const requestSchema = z.object({ email: z.string().email() });
 
@@ -53,9 +51,9 @@ export const POST = async (request: NextRequest) => {
         const codeHash = hashCode(code);
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-        await ensureDatabase();
-        await db.delete(loginCodes).where(eq(loginCodes.email, email));
-        await db.insert(loginCodes).values({ codeHash, email, expiresAt });
+        const ttlSeconds = Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / 1000));
+        await deleteLoginCode(email);
+        await saveLoginCode(email, codeHash, expiresAt.getTime(), ttlSeconds);
 
         await sendEmail(email, code);
 
