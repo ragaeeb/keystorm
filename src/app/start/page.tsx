@@ -92,6 +92,7 @@ export default function StartPage() {
         setError(null);
 
         try {
+            console.log('CALLING GENERATE LESSONS WITH', theme);
             const response = await fetch('/api/generate-lessons', {
                 body: JSON.stringify({ theme: theme.trim() }),
                 headers: { 'Content-Type': 'application/json' },
