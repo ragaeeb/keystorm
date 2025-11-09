@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { GradientProgress } from '@/components/ui/gradient-progress';
 import type { LessonType } from '@/types/lesson';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
@@ -144,7 +144,7 @@ export default function PracticeSummaryPage() {
                                         <span>Accuracy</span>
                                         <span>{level.averageAccuracy}%</span>
                                     </div>
-                                    <Progress value={level.averageAccuracy} />
+                                    <GradientProgress value={level.averageAccuracy} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-3 text-sm">
                                     <div className="rounded-lg border bg-white/60 p-3 text-center">

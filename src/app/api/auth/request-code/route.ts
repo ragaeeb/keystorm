@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomInt } from 'node:crypto';
 import { Redis } from '@upstash/redis';
 import { type NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
@@ -11,10 +11,17 @@ const MAX_REQUESTS = 3;
 
 const requestSchema = z.object({ email: z.email() });
 
-import { randomInt } from 'node:crypto';
-
+/**
+ * Generates a random 6-digit one-time code
+ * @returns String representation of random number between 100000-999999
+ */
 const generateCode = () => randomInt(100000, 1000000).toString();
 
+/**
+ * Creates SHA-256 hash of login code for secure storage
+ * @param code - Plain text 6-digit code
+ * @returns Hex-encoded hash string
+ */
 const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
 
 const resendClient = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;

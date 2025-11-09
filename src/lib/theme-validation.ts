@@ -1,22 +1,22 @@
-const wordBoundaryPattern = new RegExp(
-    `\\b(${[
-        'sex',
-        'sexual',
-        'violence',
-        'violent',
-        'murder',
-        'kill',
-        'killing',
-        'weapon',
-        'porn',
-        'terror',
-        'extremism',
-        'drugs',
-        'gambling',
-        'alcohol',
-        'hate',
-    ].join('|')})\\b`,
-);
+import { DEFAULT_BLOCKED_WORDS } from './constants';
+
+/**
+ * Gets blocked keywords from environment or defaults
+ * Supports comma-separated list in THEME_BLOCKED_WORDS env variable
+ */
+const getBlockedWords = (): string[] => {
+    const envWords = process.env.THEME_BLOCKED_WORDS;
+
+    if (envWords) {
+        return envWords
+            .split(',')
+            .map((w) => w.trim().toLowerCase())
+            .filter(Boolean);
+    }
+    return DEFAULT_BLOCKED_WORDS;
+};
+
+const wordBoundaryPattern = new RegExp(`\\b(${getBlockedWords().join('|')})\\b`);
 
 /**
  * Validates that a theme is appropriate for family-friendly content

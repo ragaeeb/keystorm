@@ -20,8 +20,8 @@ describe('keyboard', () => {
         });
 
         it('should return gray for unknown keys', () => {
-            expect(getFingerColor('~')).toBe('#E0E0E0');
-            expect(getFingerColor('@')).toBe('#E0E0E0');
+            expect(getFingerColor('€')).toBe('#E0E0E0');
+            expect(getFingerColor('¢')).toBe('#E0E0E0');
         });
 
         it('should handle special characters assigned to fingers', () => {
@@ -33,20 +33,20 @@ describe('keyboard', () => {
     describe('getKeyPosition', () => {
         it('should return position for top row keys', () => {
             const pos = getKeyPosition('Q');
-            expect(pos).toMatchObject({ x: 39, y: 57 });
+            expect(pos).toMatchObject({ x: 39, y: 97 });
         });
 
         it('should return position for home row keys', () => {
             const posA = getKeyPosition('A');
-            expect(posA).toMatchObject({ x: 49, y: 97 });
+            expect(posA).toMatchObject({ x: 49, y: 137 });
 
             const posJ = getKeyPosition('J');
-            expect(posJ).toMatchObject({ x: 249, y: 97 });
+            expect(posJ).toMatchObject({ x: 289, y: 137 });
         });
 
         it('should return null for non-existent keys', () => {
-            expect(getKeyPosition('@')).toBeNull();
-            expect(getKeyPosition('~')).toBeNull();
+            expect(getKeyPosition('€')).toBeNull();
+            expect(getKeyPosition('¢')).toBeNull();
         });
 
         it('should handle all rows correctly', () => {

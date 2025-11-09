@@ -40,7 +40,10 @@
         "enabled": true,
         "rules": {
             "complexity": {
-                "noExcessiveCognitiveComplexity": "warn",
+                "noExcessiveCognitiveComplexity": {
+                    "level": "warn",
+                    "options": { "maxAllowedComplexity": 25 }
+                },
                 "useWhile": "error"
             },
             "nursery": {

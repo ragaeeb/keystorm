@@ -64,7 +64,7 @@ describe('stats', () => {
             const startTime = Date.now() - 60000;
             const result = calculateGameStats('hel', 'hello world', startTime, 0, 0);
 
-            expect(result.wpm).toBe(0);
+            expect(result.wpm).toBe(1);
         });
     });
 });

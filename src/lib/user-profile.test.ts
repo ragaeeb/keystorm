@@ -1,8 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { clearUserProfile, getUserName, getUserTheme, saveUserName, saveUserTheme } from './user-profile';
 
+const createLocalStorageMock = () => {
+    const store = new Map<string, string>();
+    return {
+        clear: () => store.clear(),
+        getItem: (key: string) => store.get(key) ?? null,
+        removeItem: (key: string) => store.delete(key),
+        setItem: (key: string, value: string) => store.set(key, value),
+    };
+};
+
 describe('user-profile', () => {
     beforeEach(() => {
+        global.localStorage = createLocalStorageMock() as any;
         clearUserProfile();
     });
 

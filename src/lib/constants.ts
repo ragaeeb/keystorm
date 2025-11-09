@@ -1,3 +1,21 @@
+export const DEFAULT_BLOCKED_WORDS = [
+    'sex',
+    'sexual',
+    'violence',
+    'violent',
+    'murder',
+    'kill',
+    'killing',
+    'weapon',
+    'porn',
+    'terror',
+    'extremism',
+    'drugs',
+    'gambling',
+    'alcohol',
+    'hate',
+];
+
 export const KEYBOARD_ROWS = [
     ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='],
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
