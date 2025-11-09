@@ -14,3 +14,16 @@ export type Lesson = {
     /** Type of content in this lesson */
     type: LessonType;
 };
+
+export type LevelSummary = {
+    averageAccuracy: number;
+    averageWpm: number;
+    items: number;
+    level: number;
+    totalAccuracy: number;
+    totalErrors: number;
+    totalWpm: number;
+    type: Lesson['type'];
+};
+
+export type ActiveLesson = Lesson & { index: number };
