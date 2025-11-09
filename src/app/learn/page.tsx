@@ -1,4 +1,3 @@
-// app/learn/page.tsx
 'use client';
 
 import Image from 'next/image';
@@ -14,7 +13,7 @@ export default function LearnPage() {
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Enter') {
-                router.push('/practice');
+                router.push('/practice/letters');
             }
         };
         window.addEventListener('keydown', onKeyDown);
@@ -27,13 +26,24 @@ export default function LearnPage() {
                 <Card className="shadow-xl">
                     <CardHeader className="text-center">
                         <CardTitle className="text-3xl">Place Your Fingers Like This</CardTitle>
-                        <CardDescription>
-                            Rest left hand on A-S-D-F and right hand on J-K-L-; . Press Enter to continue.
+                        <CardDescription className="space-y-2">
+                            <p>
+                                <strong>Left hand:</strong> Pinky on A, Ring on S, Middle on D, Index on F
+                            </p>
+                            <p>
+                                <strong>Right hand:</strong> Index on J, Middle on K, Ring on L, Pinky on ;
+                            </p>
+                            <p>
+                                <strong>Thumbs:</strong> Both rest on the spacebar
+                            </p>
+                            <p className="text-xs">
+                                Press <kbd className="rounded bg-gray-200 px-2 py-1 font-mono">Enter</kbd> with your
+                                right pinky to continue
+                            </p>
                         </CardDescription>
                     </CardHeader>
 
                     <CardContent>
-                        {/* Image hero (Wikimedia Commons, CC BY-SA 3.0) */}
                         <figure className="relative mx-auto w-full max-w-[980px]">
                             <Image
                                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Keyboard_layout_english_fingers.png/960px-Keyboard_layout_english_fingers.png"
@@ -44,11 +54,10 @@ export default function LearnPage() {
                                 priority
                             />
                             <figcaption className="mt-2 text-center text-muted-foreground text-xs">
-                                “Keyboard layout english fingers.png” • CC BY-SA 3.0 (Wikimedia Commons).
+                                "Keyboard layout english fingers.png" • CC BY-SA 3.0 (Wikimedia Commons).
                             </figcaption>
                         </figure>
 
-                        {/* Legends */}
                         <div className="mt-8 grid gap-6 md:grid-cols-2">
                             <FingerLegend side="left" />
                             <FingerLegend side="right" />
@@ -58,9 +67,9 @@ export default function LearnPage() {
                             <Button
                                 size="lg"
                                 className="bg-gradient-to-r from-indigo-600 to-purple-600"
-                                onClick={() => router.push('/practice')}
+                                onClick={() => router.push('/practice/letters')}
                             >
-                                Press Enter to Start Typing
+                                Press Enter to Start Letter Practice
                             </Button>
                         </div>
                     </CardContent>

@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import pkg from '@/../package.json';
 
 const { version, homepage, author } = pkg;
@@ -5,8 +8,24 @@ const { version, homepage, author } = pkg;
 const versionUrl = `${homepage}/releases/tag/v${version}`;
 
 export const Footer = () => {
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrolled = window.scrollY > 100;
+            setIsVisible(scrolled);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
-        <footer className="py-6">
+        <footer
+            className={`border-t bg-white/80 py-6 backdrop-blur transition-opacity duration-300 ${
+                isVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
+            }`}
+        >
             <div className="flex items-center justify-center gap-4 text-muted-foreground text-sm">
                 <p>
                     © {new Date().getFullYear()} {author}. All Rights Reserved.{' '}

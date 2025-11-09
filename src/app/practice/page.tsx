@@ -18,12 +18,14 @@ import { StatsDisplay } from '@/components/typing/StatsDisplay';
 import { TextDisplay } from '@/components/typing/TextDisplay';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { GradientProgress } from '@/components/ui/gradient-progress';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import { useAudioContext } from '@/hooks/useAudioContext';
 import { useGameStats } from '@/hooks/useGameStats';
 import { useTypingGame } from '@/hooks/useTypingGame';
 import { DEFAULT_ISLAMIC_LESSONS } from '@/lib/default-lessons';
+import { getLevelDescription } from '@/lib/lesson-descriptions';
+import { normalizeLessonContent } from '@/lib/lesson-normalizer';
 import type { Lesson } from '@/types/lesson';
 
 type ActiveLesson = Lesson & { index: number };
@@ -39,7 +41,9 @@ type LevelSummary = {
     type: Lesson['type'];
 };
 
-const FILTERED_DEFAULT_LESSONS = DEFAULT_ISLAMIC_LESSONS.filter((lesson) => lesson.type !== 'letters');
+const FILTERED_DEFAULT_LESSONS = normalizeLessonContent(
+    DEFAULT_ISLAMIC_LESSONS.filter((lesson) => lesson.type !== 'letters'),
+);
 
 const usePracticeLessons = (
     router: ReturnType<typeof useRouter>,
@@ -66,7 +70,8 @@ const usePracticeLessons = (
             try {
                 const parsed: Lesson[] = JSON.parse(storedLessons);
                 const filtered = parsed.filter((lesson) => lesson.type !== 'letters');
-                setLessons(filtered.length > 0 ? filtered : FILTERED_DEFAULT_LESSONS);
+                const normalized = normalizeLessonContent(filtered);
+                setLessons(normalized.length > 0 ? normalized : FILTERED_DEFAULT_LESSONS);
             } catch (error) {
                 console.warn('Failed to parse lessons from storage', error);
                 setLessons(FILTERED_DEFAULT_LESSONS);
@@ -144,6 +149,7 @@ type LevelProgressParams = {
         totalWpm: number;
         items: number;
     } | null>;
+    playConfettiSound: () => void;
     resetGame: () => void;
     setCompletedLevels: React.Dispatch<React.SetStateAction<LevelSummary[]>>;
     setCurrentItemIndex: React.Dispatch<React.SetStateAction<number>>;
@@ -158,6 +164,7 @@ const useLevelProgression = ({
     currentItemIndex,
     gameState,
     levelProgressRef,
+    playConfettiSound,
     resetGame,
     setCompletedLevels,
     setCurrentItemIndex,
@@ -208,6 +215,7 @@ const useLevelProgression = ({
             levelProgressRef.current = null;
             setLevelComplete(true);
             setShowConfetti(true);
+            playConfettiSound();
 
             const confettiTimeout = setTimeout(() => setShowConfetti(false), 3000);
             return () => clearTimeout(confettiTimeout);
@@ -224,6 +232,7 @@ const useLevelProgression = ({
         currentItemIndex,
         gameState,
         levelProgressRef,
+        playConfettiSound,
         resetGame,
         setCompletedLevels,
         setCurrentItemIndex,
@@ -284,7 +293,7 @@ const PracticeView = ({
                             <CardTitle className="text-lg">Level {activeLesson.level}</CardTitle>
                             <CardDescription className="text-sm">
                                 {gameState === 'ready'
-                                    ? 'Press Enter to start'
+                                    ? getLevelDescription(activeLesson.type, activeLesson.level)
                                     : gameState === 'playing'
                                       ? `Type the ${activeLesson.type}`
                                       : levelComplete
@@ -296,7 +305,7 @@ const PracticeView = ({
                         </div>
                         <StatsDisplay stats={stats} />
                     </div>
-                    <Progress value={progress} className="mt-2" />
+                    <GradientProgress value={progress} className="mt-2" />
                 </CardHeader>
 
                 <CardContent className="flex flex-1 flex-col gap-4 overflow-hidden py-4">
@@ -314,7 +323,7 @@ const PracticeView = ({
                                     onClick={startGame}
                                     className="bg-gradient-to-r from-indigo-600 to-purple-600"
                                 >
-                                    Start
+                                    Press Enter to Start
                                 </Button>
                             </motion.div>
                         )}
@@ -392,11 +401,12 @@ export default function PracticePage() {
 
     const { lessons, mounted } = usePracticeLessons(router, resetProgress);
 
-    const { playErrorSound } = useAudioContext();
+    const { playErrorSound, playSuccessSound, playConfettiSound } = useAudioContext();
 
     const { typingState, gameState, inputRef, startGame, handleInputChange, resetGame } = useTypingGame(
         activeLesson?.content[currentItemIndex] ?? '',
         playErrorSound,
+        playSuccessSound,
     );
 
     usePersistPracticeSummary(mounted, completedLevels);
@@ -409,6 +419,7 @@ export default function PracticePage() {
         currentItemIndex,
         gameState,
         levelProgressRef,
+        playConfettiSound,
         resetGame,
         setCompletedLevels,
         setCurrentItemIndex,

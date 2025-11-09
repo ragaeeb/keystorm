@@ -3,6 +3,11 @@ import { GeminiModel, generateWithGemini } from './gemini';
 
 type GeneratedContent = { letters: string[]; words: string[]; sentences: string[]; paragraphs: string[] };
 
+/**
+ * Creates the AI prompt for generating themed typing lessons
+ * @param theme - The educational theme (e.g., "Islam", "Science")
+ * @returns Formatted prompt string for Gemini API
+ */
 const createPrompt = (theme: string): string => {
     return `You are a typing tutor content generator. Generate educational typing practice content based on the theme: "${theme}".
 
@@ -23,6 +28,11 @@ Return ONLY valid JSON in this exact format:
 Do not include any markdown formatting, explanations, or additional text. Only return the JSON object.`;
 };
 
+/**
+ * Validates that the AI response contains all required lesson data
+ * @param text - JSON string from AI response
+ * @returns true if response has valid structure and minimum content requirements
+ */
 const validateResponse = (text: string): boolean => {
     try {
         const parsed = JSON.parse(text);
@@ -42,6 +52,12 @@ const validateResponse = (text: string): boolean => {
     }
 };
 
+/**
+ * Generates complete typing lessons for all four levels using AI
+ * @param theme - The educational theme to generate content about
+ * @returns Array of 4 lessons (letters, words, sentences, paragraphs)
+ * @throws Error if GEMINI_API_KEY not configured or generation fails
+ */
 export const generateLessons = async (theme: string): Promise<Lesson[]> => {
     const apiKey = process.env.GEMINI_API_KEY;
 

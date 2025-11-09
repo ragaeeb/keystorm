@@ -7,8 +7,8 @@ import ConfettiBoom from 'react-confetti-boom';
 import { KeyboardVisual } from '@/components/typing/KeyboardVisual';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { GradientProgress } from '@/components/ui/gradient-progress';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import { useAudioContext } from '@/hooks/useAudioContext';
 import { useTypingGame } from '@/hooks/useTypingGame';
 import { DEFAULT_ISLAMIC_LESSONS } from '@/lib/default-lessons';
@@ -18,7 +18,7 @@ const LETTER_LESSON = DEFAULT_ISLAMIC_LESSONS.find((lesson) => lesson.type === '
 
 export default function LetterPracticePage() {
     const router = useRouter();
-    const { playErrorSound } = useAudioContext();
+    const { playErrorSound, playSuccessSound, playConfettiSound } = useAudioContext();
     const [letters, setLetters] = useState<string[]>(LETTER_LESSON?.content ?? []);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [mounted, setMounted] = useState(false);
@@ -26,9 +26,14 @@ export default function LetterPracticePage() {
 
     const currentLetter = letters[currentIndex] ?? '';
 
+    const handleSuccess = useCallback(() => {
+        playSuccessSound();
+    }, [playSuccessSound]);
+
     const { typingState, gameState, inputRef, startGame, handleInputChange, resetGame } = useTypingGame(
         currentLetter,
         playErrorSound,
+        handleSuccess,
     );
 
     useEffect(() => {
@@ -90,23 +95,21 @@ export default function LetterPracticePage() {
             return;
         }
 
-        // Show confetti for perfect letter completion (no errors)
-        if (typingState.errors === 0) {
-            setShowConfetti(true);
-            setTimeout(() => setShowConfetti(false), 2000);
-        }
-
         const timeout = setTimeout(() => {
             if (currentIndex < letters.length - 1) {
                 setCurrentIndex((prev) => prev + 1);
             } else {
-                sessionStorage.setItem('lettersCompleted', 'true');
-                router.push('/practice');
+                setShowConfetti(true);
+                playConfettiSound();
+                setTimeout(() => {
+                    sessionStorage.setItem('lettersCompleted', 'true');
+                    router.push('/practice');
+                }, 2500);
             }
         }, 250);
 
         return () => clearTimeout(timeout);
-    }, [currentIndex, gameState, letters.length, router, typingState.errors]);
+    }, [currentIndex, gameState, letters.length, playConfettiSound, router]);
 
     const handleSkip = useCallback(() => {
         sessionStorage.setItem('lettersCompleted', 'true');
@@ -117,9 +120,9 @@ export default function LetterPracticePage() {
         <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
             {showConfetti && (
                 <ConfettiBoom
-                    particleCount={50}
-                    effectCount={2}
-                    effectInterval={300}
+                    particleCount={100}
+                    effectCount={3}
+                    effectInterval={400}
                     colors={['#8BC34A', '#FF5252', '#FFB74D', '#4DD0E1', '#81C784', '#EC407A', '#AB47BC', '#5C6BC0']}
                 />
             )}
@@ -128,13 +131,13 @@ export default function LetterPracticePage() {
                     <CardHeader className="border-b bg-white/90 py-4 backdrop-blur">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <CardTitle className="text-lg">Letter Practice</CardTitle>
+                                <CardTitle className="text-lg">Letter Practice - Level 1</CardTitle>
                                 <CardDescription>
-                                    Type the highlighted letter. We will advance automatically when you get it right.
+                                    Type each letter as it appears. We'll advance automatically when correct.
                                 </CardDescription>
                             </div>
                             <div className="flex items-center gap-3">
-                                <Progress value={progress} className="w-40" />
+                                <GradientProgress value={progress} className="w-40" />
                                 <span className="text-gray-600 text-sm">{progress}%</span>
                             </div>
                         </div>

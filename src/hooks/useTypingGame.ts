@@ -11,7 +11,11 @@ type UseTypingGameReturn = {
     resetGame: () => void;
 };
 
-export const useTypingGame = (currentText: string, onError: () => void): UseTypingGameReturn => {
+export const useTypingGame = (
+    currentText: string,
+    onError: () => void,
+    onSuccess?: () => void,
+): UseTypingGameReturn => {
     const [gameState, setGameState] = useState<'ready' | 'playing' | 'finished'>('ready');
     const [typingState, setTypingState] = useState<TypingState>({
         backspaceCount: 0,
@@ -51,6 +55,8 @@ export const useTypingGame = (currentText: string, onError: () => void): UseTypi
                     if (lastChar !== expectedChar) {
                         newState.errors = prev.errors + 1;
                         onError();
+                    } else if (onSuccess) {
+                        onSuccess();
                     }
                 }
 
@@ -61,7 +67,7 @@ export const useTypingGame = (currentText: string, onError: () => void): UseTypi
                 setGameState('finished');
             }
         },
-        [typingState.userInput.length, currentText, onError],
+        [typingState.userInput.length, currentText, onError, onSuccess],
     );
 
     return { gameState, handleInputChange, inputRef, resetGame, startGame, typingState };

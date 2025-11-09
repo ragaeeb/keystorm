@@ -18,6 +18,11 @@ const wordBoundaryPattern = new RegExp(
     ].join('|')})\\b`,
 );
 
+/**
+ * Validates that a theme is appropriate for family-friendly content
+ * @param theme - User-provided theme string
+ * @returns true if theme is allowed (3-64 chars, alphanumeric+spaces, no blocked words)
+ */
 export const isThemeAllowed = (theme: string) => {
     const cleaned = theme.trim().toLowerCase();
 

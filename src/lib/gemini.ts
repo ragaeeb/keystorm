@@ -1,6 +1,9 @@
 import { setTimeout } from 'node:timers/promises';
 import { GoogleGenAI } from '@google/genai';
 
+/**
+ * Available Gemini model versions
+ */
 export enum GeminiModel {
     FlashLiteV2_5 = 'gemini-2.5-flash-lite',
     ProV2_5 = 'gemini-2.5-pro',
@@ -8,6 +11,11 @@ export enum GeminiModel {
 
 const RATE_LIMIT_KEYWORDS = ['429', 'rate limit', 'Too Many Requests', 'model is overloaded'];
 
+/**
+ * Redacts an API key for logging purposes by showing only first and last 4 characters
+ * @param key - The API key to redact
+ * @returns Redacted string in format "abcd...wxyz" or "***" for short keys
+ */
 const redactText = (key: string): string => {
     if (key.length <= 8) {
         return '***';
@@ -15,6 +23,11 @@ const redactText = (key: string): string => {
     return `${key.slice(0, 4)}...${key.slice(-4)}`;
 };
 
+/**
+ * Removes markdown code fences from API response text
+ * @param text - Raw text from API response
+ * @returns Cleaned text without markdown formatting
+ */
 const sanitizeResponse = (text: string): string => {
     let cleaned = text.trim();
     if (cleaned.startsWith('```json')) {
@@ -28,8 +41,26 @@ const sanitizeResponse = (text: string): string => {
     return cleaned.trim();
 };
 
-type GenerateOptions = { maxRetries?: number; timeout?: number };
+/**
+ * Configuration options for Gemini API generation
+ */
+type GenerateOptions = {
+    /** Maximum retry attempts on failure */
+    maxRetries?: number;
+    /** Request timeout in milliseconds */
+    timeout?: number;
+};
 
+/**
+ * Generates content using Google Gemini API with retry logic and validation
+ * @param prompt - The prompt to send to the model
+ * @param apiKey - Google AI API key
+ * @param validate - Validation function that returns true if response is valid
+ * @param model - Gemini model to use (default: FlashLiteV2_5)
+ * @param options - Generation options (maxRetries, timeout)
+ * @returns Sanitized response text
+ * @throws Error if all retries fail or validation never passes
+ */
 export const generateWithGemini = async (
     prompt: string,
     apiKey: string,

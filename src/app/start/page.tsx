@@ -3,13 +3,14 @@
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DEFAULT_ISLAMIC_LESSONS } from '@/lib/default-lessons';
 import { isThemeAllowed } from '@/lib/theme-validation';
+import { getUserName, getUserTheme, saveUserName, saveUserTheme } from '@/lib/user-profile';
 import type { Lesson } from '@/types/lesson';
 
 const storeLessons = (lessons: ReadonlyArray<Lesson>) => {
@@ -27,14 +28,15 @@ export default function StartPage() {
 
     const isAuthenticated = useMemo(() => Boolean(session?.user), [session?.user]);
 
+    useEffect(() => {
+        setName(getUserName());
+        setTheme(getUserTheme());
+    }, []);
+
     const handleDefaultStart = useCallback(() => {
         storeLessons(DEFAULT_ISLAMIC_LESSONS);
-        if (name.trim()) {
-            sessionStorage.setItem('userName', name.trim());
-        } else {
-            sessionStorage.removeItem('userName');
-        }
-        router.push('/practice/letters');
+        saveUserName(name);
+        router.push('/learn');
     }, [name, router]);
 
     const handleSubmit = useCallback(async () => {
@@ -75,14 +77,10 @@ export default function StartPage() {
             }
 
             storeLessons(data.lessons as Lesson[]);
-            if (name.trim()) {
-                sessionStorage.setItem('userName', name.trim());
-            } else {
-                sessionStorage.removeItem('userName');
-            }
-            sessionStorage.setItem('theme', theme.trim());
+            saveUserName(name);
+            saveUserTheme(theme.trim());
 
-            router.push('/practice/letters');
+            router.push('/learn');
         } catch (err) {
             console.error('Error generating lessons:', err);
             setError(err instanceof Error ? err.message : 'Failed to generate lessons. Please try again.');

@@ -41,16 +41,16 @@ export const DEFAULT_ISLAMIC_LESSONS: ReadonlyArray<Lesson> = [
     },
     {
         content: [
-            'There are five daily obligatory prayers.',
-            'Charity purifies the soul and wealth.',
-            'Patience is a virtue in times of hardship.',
+            'there are five daily obligatory prayers',
+            'charity purifies the soul and wealth',
+            'patience is a virtue in times of hardship',
         ],
         level: 3,
         type: 'sentences',
     },
     {
         content: [
-            'Patience persists through persistent practice. Believers build bridges between belief and benevolence. Sincere servants seek sacred serenity.',
+            'patience persists through persistent practice believers build bridges between belief and benevolence sincere servants seek sacred serenity',
         ],
         level: 4,
         type: 'paragraphs',

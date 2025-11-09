@@ -1,5 +1,3 @@
-'use client';
-
 import { clsx } from 'clsx';
 import { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -86,7 +84,7 @@ const renderFingerHighlight = (
                          Q ${pos.x} ${pos.y - 8}, ${pos.x + finger.width / 2} ${pos.y + 15}
                          L ${baseX + finger.width / 2} ${baseY} Z`}
                         fill={finger.color}
-                        opacity={isActive ? 0.95 : 0.75}
+                        opacity={isActive ? 0.95 : 0.15}
                         filter={isActive ? 'url(#glow)' : 'url(#shadow)'}
                     />
                     <ellipse
@@ -95,7 +93,7 @@ const renderFingerHighlight = (
                         rx={tipRadius + (isActive ? 2 : 0)}
                         ry={tipRadius * 1.2 + (isActive ? 2 : 0)}
                         fill={finger.color}
-                        opacity={isActive ? 0.45 : 0.65}
+                        opacity={isActive ? 0.45 : 0.1}
                         filter={isActive ? 'url(#glow)' : 'url(#shadow)'}
                     />
                 </g>

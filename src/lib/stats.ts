@@ -1,5 +1,24 @@
-export type GameStats = { wpm: number; accuracy: number; errors: number };
+/**
+ * Typing performance statistics
+ */
+export type GameStats = {
+    /** Words per minute */
+    wpm: number;
+    /** Accuracy percentage (0-100) */
+    accuracy: number;
+    /** Total error count */
+    errors: number;
+};
 
+/**
+ * Calculates typing performance metrics
+ * @param userInput - Text typed by user so far
+ * @param targetText - Expected text to type
+ * @param startTime - Unix timestamp when typing started, or null if not started
+ * @param errors - Total error count
+ * @param backspaceCount - Number of backspace keystrokes
+ * @returns Statistics object with WPM, accuracy, and error count
+ */
 export const calculateGameStats = (
     userInput: string,
     targetText: string,
