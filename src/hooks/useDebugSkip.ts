@@ -23,7 +23,11 @@ import { useEffect } from 'react';
  * });
  * ```
  */
-export const useDebugSkip = (totalItems: number, onSkip: (totalItems: number) => void) => {
+export const useDebugSkip = (
+    totalItems: number,
+    onSkip: (totalItems: number) => void,
+    inputRef?: React.RefObject<HTMLInputElement | null>,
+) => {
     useEffect(() => {
         const handleDebugKey = (event: KeyboardEvent) => {
             if (event.ctrlKey && event.shiftKey && event.key === 'D') {
@@ -35,11 +39,16 @@ export const useDebugSkip = (totalItems: number, onSkip: (totalItems: number) =>
                 if (isDev || hasDebugParam) {
                     console.log(`[Debug] Skipping to last item (${totalItems} total)`);
                     onSkip(totalItems);
+
+                    setTimeout(() => {
+                        inputRef?.current?.focus();
+                        inputRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 100);
                 }
             }
         };
 
         window.addEventListener('keydown', handleDebugKey);
         return () => window.removeEventListener('keydown', handleDebugKey);
-    }, [totalItems, onSkip]);
+    }, [totalItems, onSkip, inputRef]);
 };

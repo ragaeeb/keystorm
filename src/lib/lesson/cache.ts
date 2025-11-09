@@ -8,8 +8,8 @@ const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 const hasRedisConfig = Boolean(redisUrl && redisToken);
 const redis = hasRedisConfig ? new Redis({ token: redisToken!, url: redisUrl! }) : null;
 
-const CACHE_TTL = 60 * 60 * 24 * 3; // 3 days in seconds
-const CACHE_VERSION = 'v1'; // Increment to invalidate all caches
+const CACHE_TTL = 60 * 60 * 24 * 3;
+const CACHE_VERSION = 'v1';
 
 /**
  * Generates a stable hash for a theme string
@@ -17,7 +17,7 @@ const CACHE_VERSION = 'v1'; // Increment to invalidate all caches
  * @returns Hex-encoded SHA-256 hash
  */
 const hashTheme = (theme: string): string => {
-    return createHash('sha256').update(theme.toLowerCase().trim()).digest('hex').substring(0, 16); // First 16 chars for shorter keys
+    return createHash('sha256').update(theme.toLowerCase().trim()).digest('hex').substring(0, 16);
 };
 
 /**
@@ -37,7 +37,7 @@ const getCacheKey = (theme: string): string => {
  */
 export const getCachedLessons = async (theme: string): Promise<Lesson[] | null> => {
     if (!redis) {
-        return null; // Redis not configured, skip cache
+        return null;
     }
 
     try {
@@ -48,7 +48,6 @@ export const getCachedLessons = async (theme: string): Promise<Lesson[] | null> 
             return null;
         }
 
-        // Validate structure
         if (!Array.isArray(cached) || cached.length !== 10) {
             console.warn('Invalid cached lesson structure, ignoring cache');
             return null;
@@ -69,7 +68,7 @@ export const getCachedLessons = async (theme: string): Promise<Lesson[] | null> 
  */
 export const cacheLessons = async (theme: string, lessons: Lesson[]): Promise<void> => {
     if (!redis) {
-        return; // Redis not configured, skip cache
+        return;
     }
 
     try {
@@ -78,7 +77,6 @@ export const cacheLessons = async (theme: string, lessons: Lesson[]): Promise<vo
 
         console.log(`[Cache SET] Cached lessons for theme: ${theme} (TTL: ${CACHE_TTL}s)`);
     } catch (error) {
-        // Non-critical: cache failure shouldn't break lesson generation
         console.warn('Failed to cache lessons:', error);
     }
 };
@@ -133,10 +131,7 @@ export const getCacheStats = async (): Promise<{ totalKeys: number; sampleKeys: 
         const pattern = `lessons:theme:*:${CACHE_VERSION}`;
         const keys = await redis.keys(pattern);
 
-        return {
-            sampleKeys: keys.slice(0, 10), // First 10 for debugging
-            totalKeys: keys.length,
-        };
+        return { sampleKeys: keys.slice(0, 10), totalKeys: keys.length };
     } catch (error) {
         console.warn('Failed to get cache stats:', error);
         return { sampleKeys: [], totalKeys: 0 };

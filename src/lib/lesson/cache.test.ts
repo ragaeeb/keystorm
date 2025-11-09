@@ -1,9 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import type { Lesson } from '@/types/lesson';
 
 const originalEnv = { ...process.env };
 
-let mockRedisInstance: any = null;
+let mockRedisInstance: {
+    del: ReturnType<typeof mock>;
+    exists: ReturnType<typeof mock>;
+    get: ReturnType<typeof mock>;
+    keys: ReturnType<typeof mock>;
+    set: ReturnType<typeof mock>;
+} | null = null;
 
 mock.module('@upstash/redis', () => ({
     Redis: class MockRedis {
@@ -21,23 +27,28 @@ mock.module('@upstash/redis', () => ({
 }));
 
 describe('cache', () => {
+    const consoleWarnSpy = mock(() => {});
+    const consoleLogSpy = mock(() => {});
+    const originalConsoleWarn = console.warn;
+    const originalConsoleLog = console.log;
+
     beforeEach(() => {
+        console.warn = consoleWarnSpy;
+        console.log = consoleLogSpy;
+
         process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
         process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
 
-        if (mockRedisInstance) {
-            mockRedisInstance.get.mockClear();
-            mockRedisInstance.set.mockClear();
-            mockRedisInstance.del.mockClear();
-            mockRedisInstance.exists.mockClear();
-            mockRedisInstance.keys.mockClear();
-        }
-
+        mockRedisInstance = null;
         delete require.cache[require.resolve('./cache')];
     });
 
     afterEach(() => {
+        console.warn = originalConsoleWarn;
+        console.log = originalConsoleLog;
+
         process.env = { ...originalEnv };
+        mockRedisInstance = null;
         delete require.cache[require.resolve('./cache')];
     });
 
@@ -54,9 +65,13 @@ describe('cache', () => {
         });
 
         it('should return null when no cached data exists', async () => {
+            const { getCachedLessons } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
             mockRedisInstance.get.mockResolvedValue(null);
 
-            const { getCachedLessons } = await import('./cache');
             const result = await getCachedLessons('science');
 
             expect(result).toBeNull();
@@ -64,6 +79,12 @@ describe('cache', () => {
         });
 
         it('should return cached lessons when valid data exists', async () => {
+            const { getCachedLessons } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
+
             const mockLessons: Lesson[] = [
                 { content: ['a', 'b'], level: 1, type: 'letters' },
                 { content: ['cat', 'dog'], level: 2, type: 'words' },
@@ -78,7 +99,6 @@ describe('cache', () => {
             ];
             mockRedisInstance.get.mockResolvedValue(mockLessons);
 
-            const { getCachedLessons } = await import('./cache');
             const result = await getCachedLessons('science');
 
             expect(result).toEqual(mockLessons);
@@ -86,18 +106,26 @@ describe('cache', () => {
         });
 
         it('should return null for invalid cached structure (too few lessons)', async () => {
+            const { getCachedLessons } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
             mockRedisInstance.get.mockResolvedValue([{ content: ['a'], level: 1, type: 'letters' }]);
 
-            const { getCachedLessons } = await import('./cache');
             const result = await getCachedLessons('science');
 
             expect(result).toBeNull();
         });
 
         it('should handle Redis errors gracefully', async () => {
+            const { getCachedLessons } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
             mockRedisInstance.get.mockRejectedValue(new Error('Redis connection failed'));
 
-            const { getCachedLessons } = await import('./cache');
             const result = await getCachedLessons('science');
 
             expect(result).toBeNull();
@@ -119,6 +147,11 @@ describe('cache', () => {
 
         it('should cache lessons with correct TTL', async () => {
             const { cacheLessons } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
+
             const mockLessons: Lesson[] = [
                 { content: ['a'], level: 1, type: 'letters' },
                 { content: ['cat'], level: 2, type: 'words' },
@@ -135,9 +168,13 @@ describe('cache', () => {
         });
 
         it('should handle Redis errors gracefully without throwing', async () => {
+            const { cacheLessons } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
             mockRedisInstance.set.mockRejectedValue(new Error('Redis write failed'));
 
-            const { cacheLessons } = await import('./cache');
             const mockLessons: Lesson[] = [{ content: ['a'], level: 1, type: 'letters' }];
 
             await expect(cacheLessons('science', mockLessons)).resolves.toBeUndefined();
@@ -156,9 +193,13 @@ describe('cache', () => {
         });
 
         it('should return true when cache exists', async () => {
+            const { isCached } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
             mockRedisInstance.exists.mockResolvedValue(1);
 
-            const { isCached } = await import('./cache');
             const result = await isCached('science');
 
             expect(result).toBe(true);
@@ -166,18 +207,26 @@ describe('cache', () => {
         });
 
         it('should return false when cache does not exist', async () => {
+            const { isCached } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
             mockRedisInstance.exists.mockResolvedValue(0);
 
-            const { isCached } = await import('./cache');
             const result = await isCached('science');
 
             expect(result).toBe(false);
         });
 
         it('should return false on Redis errors', async () => {
+            const { isCached } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
             mockRedisInstance.exists.mockRejectedValue(new Error('Connection error'));
 
-            const { isCached } = await import('./cache');
             const result = await isCached('science');
 
             expect(result).toBe(false);
@@ -197,6 +246,11 @@ describe('cache', () => {
 
         it('should delete cache key for theme', async () => {
             const { invalidateThemeCache } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
+
             await invalidateThemeCache('science');
 
             expect(mockRedisInstance.del).toHaveBeenCalledTimes(1);
@@ -206,9 +260,13 @@ describe('cache', () => {
         });
 
         it('should handle errors gracefully', async () => {
+            const { invalidateThemeCache } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
             mockRedisInstance.del.mockRejectedValue(new Error('Delete failed'));
 
-            const { invalidateThemeCache } = await import('./cache');
             await expect(invalidateThemeCache('science')).resolves.toBeUndefined();
         });
     });
@@ -225,10 +283,15 @@ describe('cache', () => {
         });
 
         it('should return cache statistics', async () => {
+            const { getCacheStats } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
+
             const mockKeys = ['lessons:theme:abc123:v1', 'lessons:theme:def456:v1', 'lessons:theme:ghi789:v1'];
             mockRedisInstance.keys.mockResolvedValue(mockKeys);
 
-            const { getCacheStats } = await import('./cache');
             const stats = await getCacheStats();
 
             expect(stats.totalKeys).toBe(3);
@@ -237,10 +300,15 @@ describe('cache', () => {
         });
 
         it('should limit sample keys to 10', async () => {
+            const { getCacheStats } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
+
             const mockKeys = Array.from({ length: 15 }, (_, i) => `lessons:theme:key${i}:v1`);
             mockRedisInstance.keys.mockResolvedValue(mockKeys);
 
-            const { getCacheStats } = await import('./cache');
             const stats = await getCacheStats();
 
             expect(stats.totalKeys).toBe(15);
@@ -248,9 +316,13 @@ describe('cache', () => {
         });
 
         it('should handle errors gracefully', async () => {
+            const { getCacheStats } = await import('./cache');
+
+            if (!mockRedisInstance) {
+                throw new Error('Mock not initialized');
+            }
             mockRedisInstance.keys.mockRejectedValue(new Error('Keys fetch failed'));
 
-            const { getCacheStats } = await import('./cache');
             const stats = await getCacheStats();
 
             expect(stats).toEqual({ sampleKeys: [], totalKeys: 0 });

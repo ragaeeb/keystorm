@@ -44,7 +44,7 @@ type UseTypingGameReturn = {
 export const useTypingGame = (
     currentText: string,
     onError: () => void,
-    onSuccess?: () => void,
+    onSuccess?: (audioPath?: string) => void,
 ): UseTypingGameReturn => {
     const [gameState, setGameState] = useState<'ready' | 'playing' | 'finished'>('ready');
     const [typingState, setTypingState] = useState<TypingState>({
@@ -86,7 +86,7 @@ export const useTypingGame = (
                         newState.errors = prev.errors + 1;
                         onError();
                     } else if (onSuccess) {
-                        onSuccess();
+                        onSuccess('/sfx/keypress.mp3');
                     }
                 }
 

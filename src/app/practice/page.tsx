@@ -29,6 +29,7 @@ const useDebugMode = (
     currentItemIndex: number,
     totalItems: number,
     setCurrentItemIndex: React.Dispatch<React.SetStateAction<number>>,
+    inputRef: React.RefObject<HTMLInputElement | null>,
 ) => {
     useEffect(() => {
         const handleDebugKey = (event: KeyboardEvent) => {
@@ -40,12 +41,16 @@ const useDebugMode = (
                 if (isDev || hasDebugParam) {
                     console.log('[Debug] Skipping to last item in level');
                     setCurrentItemIndex(Math.max(0, totalItems - 1));
+                    setTimeout(() => {
+                        inputRef.current?.focus();
+                        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 100);
                 }
             }
         };
         window.addEventListener('keydown', handleDebugKey);
         return () => window.removeEventListener('keydown', handleDebugKey);
-    }, [currentItemIndex, totalItems, setCurrentItemIndex]);
+    }, [currentItemIndex, totalItems, setCurrentItemIndex, inputRef]);
 };
 
 export default function PracticePage() {
@@ -80,7 +85,7 @@ export default function PracticePage() {
 
     usePersistPracticeSummary(mounted, completedLevels);
     useStartGameOnEnter(gameState, startGame);
-    useDebugMode(currentItemIndex, activeLesson?.content.length ?? 0, setCurrentItemIndex);
+    useDebugMode(currentItemIndex, activeLesson?.content.length ?? 0, setCurrentItemIndex, inputRef);
 
     const stats = useGameStats(typingState, activeLesson?.content[currentItemIndex] ?? '');
 
@@ -91,6 +96,7 @@ export default function PracticePage() {
         levelProgressRef,
         playConfettiSound,
         resetGame,
+        router,
         setCompletedLevels,
         setCurrentItemIndex,
         setLevelComplete,

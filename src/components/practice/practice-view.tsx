@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { type FormEvent, type RefObject, useMemo } from 'react';
+import { type FormEvent, type RefObject, useEffect, useMemo } from 'react';
 import ConfettiBoom from 'react-confetti-boom';
 import { KeyboardVisual } from '@/components/typing/KeyboardVisual';
 import { Button } from '@/components/ui/button';
@@ -52,6 +52,19 @@ export const PracticeView = ({
 
     const currentText = activeLesson.content[currentItemIndex];
     const totalItems = activeLesson.content.length;
+
+    useEffect(() => {
+        if (levelComplete) {
+            const handleEnter = (e: KeyboardEvent) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSubmit({} as FormEvent<HTMLFormElement>);
+                }
+            };
+            window.addEventListener('keydown', handleEnter);
+            return () => window.removeEventListener('keydown', handleEnter);
+        }
+    }, [levelComplete, handleSubmit]);
 
     return (
         <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
@@ -157,11 +170,13 @@ export const PracticeView = ({
                             <div className="flex flex-1 flex-col items-center justify-center gap-6">
                                 <h2 className="text-center font-semibold text-3xl text-gray-800">Level Complete!</h2>
                                 <p className="text-center text-gray-600">Great job! Ready for the next challenge?</p>
-                                <form onSubmit={handleSubmit}>
-                                    <Button type="submit" size="lg">
-                                        {isLastLesson ? 'View Summary' : `Continue to Level ${activeLesson.level + 1}`}
-                                    </Button>
-                                </form>
+                                <Button size="lg" onClick={() => handleSubmit({} as FormEvent<HTMLFormElement>)}>
+                                    {isLastLesson ? 'View Summary' : `Continue to Level ${activeLesson.level + 1}`}
+                                </Button>
+                                <p className="text-center text-gray-500 text-sm">
+                                    Press <kbd className="rounded bg-gray-200 px-2 py-1 font-mono">Enter</kbd> to
+                                    continue
+                                </p>
                             </div>
                         )}
                     </CardContent>

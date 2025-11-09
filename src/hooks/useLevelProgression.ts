@@ -1,4 +1,5 @@
 import { type RefObject, useEffect } from 'react';
+import { getNextLevelRoute } from '@/lib/lesson/descriptions';
 import type { ActiveLesson, LevelSummary } from '@/types/lesson';
 import type { useGameStats } from './useGameStats';
 
@@ -9,6 +10,7 @@ type LevelProgressParams = {
     levelProgressRef: RefObject<{ totalAccuracy: number; totalErrors: number; totalWpm: number; items: number } | null>;
     playConfettiSound: () => void;
     resetGame: () => void;
+    router: { push: (path: string) => void };
     setCompletedLevels: React.Dispatch<React.SetStateAction<LevelSummary[]>>;
     setCurrentItemIndex: React.Dispatch<React.SetStateAction<number>>;
     setLevelComplete: React.Dispatch<React.SetStateAction<boolean>>;
@@ -17,41 +19,6 @@ type LevelProgressParams = {
     stats: ReturnType<typeof useGameStats>;
 };
 
-/**
- * Custom hook for managing progression through typing practice levels
- *
- * Handles automatic advancement between items within a level, tracks cumulative
- * statistics, triggers confetti on level completion, and prepares summary data.
- *
- * When the last item in a level is completed:
- * - Calculates average WPM and accuracy
- * - Creates a LevelSummary object
- * - Updates completedLevels state
- * - Shows confetti animation
- * - Sets levelComplete flag to true
- *
- * For non-final items, automatically advances to next item after 250ms delay.
- *
- * @param params - Configuration object containing lesson data, state setters, and callbacks
- *
- * @example
- * ```tsx
- * useLevelProgression({
- *   activeLesson,
- *   currentItemIndex,
- *   gameState,
- *   levelProgressRef,
- *   playConfettiSound,
- *   resetGame,
- *   setCompletedLevels,
- *   setCurrentItemIndex,
- *   setLevelComplete,
- *   setShowConfetti,
- *   startGame,
- *   stats,
- * });
- * ```
- */
 export const useLevelProgression = ({
     activeLesson,
     currentItemIndex,
@@ -59,6 +26,7 @@ export const useLevelProgression = ({
     levelProgressRef,
     playConfettiSound,
     resetGame,
+    router,
     setCompletedLevels,
     setCurrentItemIndex,
     setLevelComplete,
@@ -110,6 +78,14 @@ export const useLevelProgression = ({
             setShowConfetti(true);
             playConfettiSound();
 
+            const tutorialRoute = getNextLevelRoute(activeLesson.type);
+            if (tutorialRoute && tutorialRoute.startsWith('/learn/')) {
+                const confettiTimeout = setTimeout(() => {
+                    router.push(tutorialRoute);
+                }, 2500);
+                return () => clearTimeout(confettiTimeout);
+            }
+
             const confettiTimeout = setTimeout(() => setShowConfetti(false), 3000);
             return () => clearTimeout(confettiTimeout);
         }
@@ -127,6 +103,7 @@ export const useLevelProgression = ({
         levelProgressRef,
         playConfettiSound,
         resetGame,
+        router,
         setCompletedLevels,
         setCurrentItemIndex,
         setLevelComplete,
