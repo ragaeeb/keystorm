@@ -35,21 +35,23 @@ export const getLevelDescription = (type: LessonType, level: number): string => 
 
 /**
  * Gets the next route after completing a level
+ * Includes tutorial pages before new skill introductions
+ *
  * @param currentType - Current lesson type
  * @returns Route to navigate to, or null if it's the last level
  */
 export const getNextLevelRoute = (currentType: LessonType): string | null => {
     const routeMap: Record<LessonType, string | null> = {
         advanced: '/practice',
-        capitals: '/practice', // Continue to main practice flow
+        capitals: '/learn/numbers',
         expert: '/practice/summary',
-        letters: '/practice/words',
-        mixed: '/practice',
+        letters: '/practice',
+        mixed: '/learn/punctuation',
         numbers: '/practice',
         paragraphs: '/practice',
         punctuation: '/practice',
-        sentences: '/practice',
-        words: '/learn/shift', // New shift key tutorial
+        sentences: '/learn/numbers',
+        words: '/learn/shift',
     };
 
     return routeMap[currentType] ?? '/practice';

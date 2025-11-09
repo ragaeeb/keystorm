@@ -11,6 +11,36 @@ type UseTypingGameReturn = {
     resetGame: () => void;
 };
 
+/**
+ * Custom hook for managing typing game state and logic
+ *
+ * Handles:
+ * - Game state transitions (ready → playing → finished)
+ * - User input tracking and validation
+ * - Error counting and backspace detection
+ * - Timer management for WPM calculation
+ * - Audio feedback triggers
+ *
+ * Game completes when userInput exactly matches currentText.
+ * Each keystroke is validated against expected character, triggering
+ * success/error callbacks accordingly.
+ *
+ * @param currentText - The target text user should type
+ * @param onError - Callback fired when user makes a typing error
+ * @param onSuccess - Optional callback fired on each correct keystroke
+ * @returns Object containing game state, input ref, and control functions
+ *
+ * @example
+ * ```tsx
+ * const { typingState, gameState, inputRef, startGame, handleInputChange } = useTypingGame(
+ *   "Hello world",
+ *   playErrorSound,
+ *   playSuccessSound
+ * );
+ *
+ * <input ref={inputRef} value={typingState.userInput} onChange={handleInputChange} />
+ * ```
+ */
 export const useTypingGame = (
     currentText: string,
     onError: () => void,

@@ -14,9 +14,6 @@ import { useTypingGame } from '@/hooks/useTypingGame';
 import { loadLevelFromJson } from '@/lib/lesson/lazy';
 import type { Lesson } from '@/types/lesson';
 
-/**
- * LetterPracticePage - Level 1 individual letter typing practice
- */
 export default function LetterPracticePage() {
     const router = useRouter();
     const { playErrorSound, playSuccessSound, playConfettiSound } = useAudioContext();
@@ -34,13 +31,9 @@ export default function LetterPracticePage() {
         playSuccessSound,
     );
 
-    /**
-     * Loads letter lesson from sessionStorage or JSON file
-     */
     useEffect(() => {
         const loadLetters = async () => {
             try {
-                // Try sessionStorage first (custom lessons)
                 const storedLessons = sessionStorage.getItem('lessons');
                 if (storedLessons) {
                     const parsed: Lesson[] = JSON.parse(storedLessons);
@@ -53,7 +46,6 @@ export default function LetterPracticePage() {
                     }
                 }
 
-                // Fallback to default JSON
                 const defaultLesson = await loadLevelFromJson(1);
                 setLetters(defaultLesson.content);
             } catch (error) {
@@ -67,9 +59,6 @@ export default function LetterPracticePage() {
         loadLetters();
     }, []);
 
-    /**
-     * Reset and start game when current letter changes
-     */
     useEffect(() => {
         if (!mounted || !currentLetter || loading) {
             return;
@@ -108,9 +97,6 @@ export default function LetterPracticePage() {
         [handleInputChange],
     );
 
-    /**
-     * Advance to next letter or complete level
-     */
     useEffect(() => {
         if (gameState !== 'finished') {
             return;
@@ -136,6 +122,23 @@ export default function LetterPracticePage() {
         sessionStorage.setItem('lettersCompleted', 'true');
         router.push('/practice');
     }, [router]);
+
+    useEffect(() => {
+        const handleDebugKey = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                e.preventDefault();
+                const isDev = process.env.NODE_ENV === 'development';
+                const hasDebugParam = typeof window !== 'undefined' && window.location.search.includes('debug=true');
+
+                if (isDev || hasDebugParam) {
+                    console.log('[Debug] Skipping to last letter');
+                    setCurrentIndex(Math.max(0, letters.length - 1));
+                }
+            }
+        };
+        window.addEventListener('keydown', handleDebugKey);
+        return () => window.removeEventListener('keydown', handleDebugKey);
+    }, [letters.length]);
 
     if (loading) {
         return (
@@ -175,7 +178,7 @@ export default function LetterPracticePage() {
                     </CardHeader>
 
                     <CardContent className="flex flex-1 flex-col gap-6 py-6">
-                        <div className="flex flex-1 flex-col items-center justify-center gap-6 md:flex-row md:items-stretch">
+                        <div className="flex flex-1 flex-col items-center justify-center gap-8">
                             <motion.div
                                 key={currentLetter}
                                 initial={{ opacity: 0, scale: 0.95 }}
@@ -189,19 +192,21 @@ export default function LetterPracticePage() {
                                 <div className="w-full max-w-2xl">
                                     <KeyboardVisual activeKey={nextChar} />
                                 </div>
-                                <Input
-                                    ref={inputRef}
-                                    value={typingState.userInput}
-                                    onChange={handleLetterChange}
-                                    autoComplete="off"
-                                    autoCorrect="off"
-                                    autoCapitalize="off"
-                                    spellCheck={false}
-                                    className="w-40 rounded-full border-2 border-indigo-200 text-center font-semibold text-2xl"
-                                />
-                                <p className="text-gray-500 text-sm">
-                                    Mistyped letters will stay on screen so you can try again.
-                                </p>
+                                <div className="flex flex-col items-center gap-3">
+                                    <Input
+                                        ref={inputRef}
+                                        value={typingState.userInput}
+                                        onChange={handleLetterChange}
+                                        autoComplete="off"
+                                        autoCorrect="off"
+                                        autoCapitalize="off"
+                                        spellCheck={false}
+                                        className="w-40 rounded-full border-2 border-indigo-200 text-center font-semibold text-2xl"
+                                    />
+                                    <p className="text-center text-gray-500 text-sm">
+                                        Mistyped letters will stay on screen so you can try again.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 

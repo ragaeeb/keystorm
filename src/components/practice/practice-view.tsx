@@ -1,32 +1,31 @@
-import { AnimatePresence, motion } from 'motion/react';
-import type { ChangeEvent, FormEvent } from 'react';
+import { motion } from 'motion/react';
+import { type FormEvent, type RefObject, useMemo } from 'react';
 import ConfettiBoom from 'react-confetti-boom';
 import { KeyboardVisual } from '@/components/typing/KeyboardVisual';
-import { StatsDisplay } from '@/components/typing/StatsDisplay';
-import { TextDisplay } from '@/components/typing/TextDisplay';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GradientProgress } from '@/components/ui/gradient-progress';
 import { Input } from '@/components/ui/input';
-import type { useGameStats } from '@/hooks/useGameStats';
 import { getLevelDescription } from '@/lib/lesson/descriptions';
+import type { GameStats } from '@/lib/stats';
 import type { ActiveLesson } from '@/types/lesson';
 
 type PracticeViewProps = {
     activeLesson: ActiveLesson;
+    currentItemIndex: number;
     gameState: 'ready' | 'playing' | 'finished';
-    handleInputChange: (event: ChangeEvent<HTMLInputElement>) => void;
-    handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
-    inputRef: React.RefObject<HTMLInputElement | null>;
+    handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    handleSubmit: (e: FormEvent<HTMLFormElement>) => void;
+    inputRef: RefObject<HTMLInputElement | null>;
     isLastLesson: boolean;
+    itemProgress: number;
     levelComplete: boolean;
     nextChar: string;
     progress: number;
     showConfetti: boolean;
     startGame: () => void;
-    stats: ReturnType<typeof useGameStats>;
+    stats: GameStats;
     userInput: string;
-    currentItemIndex: number;
 };
 
 export const PracticeView = ({
@@ -37,6 +36,7 @@ export const PracticeView = ({
     handleSubmit,
     inputRef,
     isLastLesson,
+    itemProgress,
     levelComplete,
     nextChar,
     progress,
@@ -44,106 +44,129 @@ export const PracticeView = ({
     startGame,
     stats,
     userInput,
-}: PracticeViewProps) => (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
-        {showConfetti && (
-            <ConfettiBoom
-                particleCount={100}
-                effectCount={3}
-                effectInterval={400}
-                colors={['#8BC34A', '#FF5252', '#FFB74D', '#4DD0E1', '#81C784', '#EC407A', '#AB47BC', '#5C6BC0']}
-            />
-        )}
-        <div className="mx-auto w-full max-w-6xl flex-1">
-            <Card className="flex h-full flex-col">
-                <CardHeader className="border-b bg-white/90 py-3 backdrop-blur">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <CardTitle className="text-lg">Level {activeLesson.level}</CardTitle>
-                            <CardDescription className="text-sm">
-                                {gameState === 'ready'
-                                    ? getLevelDescription(activeLesson.type, activeLesson.level)
-                                    : gameState === 'playing'
-                                      ? `Type the ${activeLesson.type}`
-                                      : levelComplete
-                                        ? isLastLesson
-                                            ? 'All levels complete! Press Enter to view your summary'
-                                            : 'Level complete! Press Enter for next level'
-                                        : 'Keep going!'}
-                            </CardDescription>
-                        </div>
-                        <StatsDisplay stats={stats} />
-                    </div>
-                    <GradientProgress value={progress} className="mt-2" />
-                </CardHeader>
+}: PracticeViewProps) => {
+    const levelDescription = useMemo(
+        () => getLevelDescription(activeLesson.type, activeLesson.level),
+        [activeLesson.type, activeLesson.level],
+    );
 
-                <CardContent className="flex flex-1 flex-col gap-4 overflow-hidden py-4">
-                    <AnimatePresence mode="wait">
+    const currentText = activeLesson.content[currentItemIndex];
+    const totalItems = activeLesson.content.length;
+
+    return (
+        <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
+            {showConfetti && (
+                <ConfettiBoom
+                    particleCount={100}
+                    effectCount={3}
+                    effectInterval={400}
+                    colors={['#8BC34A', '#FF5252', '#FFB74D', '#4DD0E1', '#81C784', '#EC407A', '#AB47BC', '#5C6BC0']}
+                />
+            )}
+            <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
+                <Card className="flex flex-1 flex-col">
+                    <CardHeader className="border-b bg-white/90 py-4 backdrop-blur">
+                        <div className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <CardTitle className="text-lg">
+                                        Level {activeLesson.level} - {activeLesson.type}
+                                    </CardTitle>
+                                    <CardDescription className="capitalize">{levelDescription}</CardDescription>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-gray-600 text-sm">
+                                        Item {currentItemIndex + 1}/{totalItems}
+                                    </span>
+                                    <GradientProgress value={itemProgress} className="flex-1" />
+                                    <span className="text-gray-600 text-sm">{itemProgress}%</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-gray-600 text-sm">Current</span>
+                                    <GradientProgress value={progress} className="flex-1" />
+                                    <span className="text-gray-600 text-sm">{Math.round(progress)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="flex flex-1 flex-col gap-6 py-6">
                         {gameState === 'ready' && (
-                            <motion.div
-                                key="ready"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex flex-1 items-center justify-center"
-                            >
-                                <Button
-                                    size="lg"
-                                    onClick={startGame}
-                                    className="bg-gradient-to-r from-indigo-600 to-purple-600"
-                                >
-                                    Press Enter to Start
+                            <div className="flex flex-1 flex-col items-center justify-center gap-6">
+                                <h2 className="text-center font-semibold text-2xl text-gray-800">Ready to practice?</h2>
+                                <Button onClick={startGame} size="lg">
+                                    Start Level {activeLesson.level}
                                 </Button>
-                            </motion.div>
+                                <p className="text-center text-gray-500 text-sm">
+                                    Or press <kbd className="rounded bg-gray-200 px-2 py-1 font-mono">Enter</kbd> to
+                                    begin
+                                </p>
+                            </div>
                         )}
 
-                        {gameState !== 'ready' && (
-                            <motion.div
-                                key="playing"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="flex flex-1 flex-col gap-6"
-                            >
-                                <TextDisplay
-                                    targetText={activeLesson.content[currentItemIndex]}
-                                    userInput={userInput}
-                                />
+                        {gameState === 'playing' && (
+                            <div className="flex flex-1 flex-col items-center justify-center gap-6">
+                                <motion.div
+                                    key={currentText}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="rounded-lg bg-gray-50 p-6 font-mono text-2xl text-gray-800"
+                                >
+                                    {currentText}
+                                </motion.div>
 
-                                <div className="flex-1">
-                                    <KeyboardVisual activeKey={nextChar} className="max-w-3xl" />
+                                <div className="w-full max-w-2xl">
+                                    <KeyboardVisual activeKey={nextChar} />
                                 </div>
 
-                                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                                <form onSubmit={(e) => e.preventDefault()} className="w-full max-w-2xl">
                                     <Input
                                         ref={inputRef}
-                                        type="text"
                                         value={userInput}
                                         onChange={handleInputChange}
-                                        className="font-mono text-lg"
-                                        autoFocus
-                                        spellCheck={false}
                                         autoComplete="off"
                                         autoCorrect="off"
                                         autoCapitalize="off"
+                                        spellCheck={false}
+                                        className="w-full text-center font-mono text-xl"
+                                        placeholder="Type here..."
                                     />
-
-                                    {levelComplete && (
-                                        <div className="flex justify-center">
-                                            <Button
-                                                type="submit"
-                                                size="lg"
-                                                className="bg-gradient-to-r from-indigo-600 to-purple-600"
-                                            >
-                                                {isLastLesson ? 'View Summary' : 'Next Level'}
-                                            </Button>
-                                        </div>
-                                    )}
                                 </form>
-                            </motion.div>
+
+                                <div className="flex gap-8 text-sm">
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-gray-500">WPM</span>
+                                        <span className="font-semibold text-xl">{stats.wpm}</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-gray-500">Accuracy</span>
+                                        <span className="font-semibold text-xl">{stats.accuracy}%</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-gray-500">Errors</span>
+                                        <span className="font-semibold text-xl">{stats.errors}</span>
+                                    </div>
+                                </div>
+                            </div>
                         )}
-                    </AnimatePresence>
-                </CardContent>
-            </Card>
+
+                        {levelComplete && (
+                            <div className="flex flex-1 flex-col items-center justify-center gap-6">
+                                <h2 className="text-center font-semibold text-3xl text-gray-800">Level Complete!</h2>
+                                <p className="text-center text-gray-600">Great job! Ready for the next challenge?</p>
+                                <form onSubmit={handleSubmit}>
+                                    <Button type="submit" size="lg">
+                                        {isLastLesson ? 'View Summary' : `Continue to Level ${activeLesson.level + 1}`}
+                                    </Button>
+                                </form>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
         </div>
-    </div>
-);
+    );
+};

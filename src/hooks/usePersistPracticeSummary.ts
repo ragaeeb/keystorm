@@ -1,6 +1,28 @@
 import { useEffect } from 'react';
 import type { LevelSummary } from '@/types/lesson';
 
+/**
+ * Custom hook for persisting practice summary data to sessionStorage
+ *
+ * Automatically calculates and stores overall statistics from completed levels.
+ * Summary includes:
+ * - Overall average WPM and accuracy
+ * - Total errors and items completed
+ * - Per-level breakdowns
+ * - Completion timestamp
+ *
+ * Data is cleared when completedLevels is empty, stored when levels are present.
+ * This enables the summary page to display results after practice completion.
+ *
+ * @param mounted - Whether the component has mounted (prevents SSR issues)
+ * @param completedLevels - Array of completed level summaries
+ *
+ * @example
+ * ```tsx
+ * const [completedLevels, setCompletedLevels] = useState<LevelSummary[]>([]);
+ * usePersistPracticeSummary(mounted, completedLevels);
+ * ```
+ */
 export const usePersistPracticeSummary = (mounted: boolean, completedLevels: LevelSummary[]) => {
     useEffect(() => {
         if (!mounted) {

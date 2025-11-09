@@ -203,28 +203,31 @@ const validateAdvancedLevels = (text: string): boolean => {
 };
 
 /**
- * Generates lessons with caching and lazy loading
- * Early levels (1-4) generate immediately
- * Advanced levels (5-10) generated on-demand when user reaches level 5
+ * Generates ONLY early lessons (1-4) with caching
+ * This is the only function that should be called from the API route
+ * Advanced levels are loaded lazily from JSON files when needed
  *
  * @param theme - Educational theme
- * @param levelsNeeded - 'early' (1-4) or 'all' (1-10)
- * @returns Array of lessons
+ * @returns Array of early lessons (1-4)
  */
-export const generateLessons = async (theme: string, levelsNeeded: 'early' | 'all' = 'all'): Promise<Lesson[]> => {
+export const generateLessons = async (theme: string): Promise<Lesson[]> => {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
         throw new Error('GEMINI_API_KEY not configured');
     }
 
-    // Check cache first
-    const cached = await getCachedLessons(theme);
+    // Check cache first (only early levels)
+    const cacheKey = `early:${theme}`;
+    const cached = await getCachedLessons(cacheKey);
     if (cached) {
-        return levelsNeeded === 'early' ? cached.slice(0, 4) : cached;
+        console.log('[generateLessons] Cache hit for early levels');
+        return cached;
     }
 
-    // Generate early levels (always needed)
+    console.log('[generateLessons] Generating early levels (1-4) for theme:', theme);
+
+    // Generate early levels only
     const earlyPrompt = createEarlyLevelsPrompt(theme);
     const earlyResponse = await generateWithGemini(
         earlyPrompt,
@@ -243,12 +246,39 @@ export const generateLessons = async (theme: string, levelsNeeded: 'early' | 'al
         { content: earlyContent.sentences, level: 4, type: 'sentences' },
     ];
 
-    // If only early levels needed, return now (save tokens!)
-    if (levelsNeeded === 'early') {
-        return earlyLessons;
+    // Cache only early levels with prefixed key
+    await cacheLessons(cacheKey, earlyLessons);
+
+    console.log('[generateLessons] Early levels generated successfully');
+    return earlyLessons;
+};
+
+/**
+ * Generates advanced lessons (5-10) on-demand
+ * Only called when user reaches level 5 or later
+ * NOT used in current implementation - advanced levels come from JSON files
+ *
+ * @param theme - Educational theme
+ * @returns Array of advanced lessons (5-10)
+ * @deprecated Use lazy loading from JSON files instead
+ */
+export const generateAdvancedLessons = async (theme: string): Promise<Lesson[]> => {
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+        throw new Error('GEMINI_API_KEY not configured');
     }
 
-    // Generate advanced levels (lazy loaded)
+    // Check cache first
+    const cacheKey = `advanced:${theme}`;
+    const cached = await getCachedLessons(cacheKey);
+    if (cached) {
+        console.log('[generateAdvancedLessons] Cache hit for advanced levels');
+        return cached;
+    }
+
+    console.log('[generateAdvancedLessons] Generating advanced levels (5-10) for theme:', theme);
+
     const advancedPrompt = createAdvancedLevelsPrompt(theme);
     const advancedResponse = await generateWithGemini(
         advancedPrompt,
@@ -269,10 +299,8 @@ export const generateLessons = async (theme: string, levelsNeeded: 'early' | 'al
         { content: advancedContent.expert, level: 10, type: 'expert' },
     ];
 
-    const allLessons = [...earlyLessons, ...advancedLessons];
+    await cacheLessons(cacheKey, advancedLessons);
 
-    // Cache for future requests (3 day TTL)
-    await cacheLessons(theme, allLessons);
-
-    return allLessons;
+    console.log('[generateAdvancedLessons] Advanced levels generated successfully');
+    return advancedLessons;
 };

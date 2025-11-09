@@ -15,10 +15,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <html lang="en">
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
                 <Providers>
-                    <main>
-                        {children}
+                    <div className="flex min-h-screen flex-col">
+                        <main className="flex-1">{children}</main>
                         <Footer />
-                    </main>
+                    </div>
                 </Providers>
             </body>
         </html>

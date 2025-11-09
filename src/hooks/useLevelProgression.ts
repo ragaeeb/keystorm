@@ -17,6 +17,41 @@ type LevelProgressParams = {
     stats: ReturnType<typeof useGameStats>;
 };
 
+/**
+ * Custom hook for managing progression through typing practice levels
+ *
+ * Handles automatic advancement between items within a level, tracks cumulative
+ * statistics, triggers confetti on level completion, and prepares summary data.
+ *
+ * When the last item in a level is completed:
+ * - Calculates average WPM and accuracy
+ * - Creates a LevelSummary object
+ * - Updates completedLevels state
+ * - Shows confetti animation
+ * - Sets levelComplete flag to true
+ *
+ * For non-final items, automatically advances to next item after 250ms delay.
+ *
+ * @param params - Configuration object containing lesson data, state setters, and callbacks
+ *
+ * @example
+ * ```tsx
+ * useLevelProgression({
+ *   activeLesson,
+ *   currentItemIndex,
+ *   gameState,
+ *   levelProgressRef,
+ *   playConfettiSound,
+ *   resetGame,
+ *   setCompletedLevels,
+ *   setCurrentItemIndex,
+ *   setLevelComplete,
+ *   setShowConfetti,
+ *   startGame,
+ *   stats,
+ * });
+ * ```
+ */
 export const useLevelProgression = ({
     activeLesson,
     currentItemIndex,

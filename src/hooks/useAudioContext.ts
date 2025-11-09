@@ -1,8 +1,41 @@
 import { useCallback, useEffect, useRef } from 'react';
 
+/**
+ * Custom hook for managing audio feedback in typing practice
+ *
+ * Provides three sound effects:
+ * - Error sound: Low-pitched beep for incorrect keystrokes
+ * - Success sound: Higher-pitched tone for correct keystrokes
+ * - Confetti sound: Ascending tones for level completion
+ *
+ * Uses Web Audio API for synthesized sounds or HTML5 Audio for custom files.
+ * Audio context is automatically cleaned up on unmount.
+ *
+ * @returns Object containing audio playback functions
+ *
+ * @example
+ * ```tsx
+ * const { playErrorSound, playSuccessSound, playConfettiSound } = useAudioContext();
+ *
+ * // Play error sound on wrong keystroke
+ * if (userInput !== expectedChar) {
+ *   playErrorSound();
+ * }
+ *
+ * // Play success with custom sound file
+ * playSuccessSound('/sounds/ding.mp3');
+ * ```
+ */
 export const useAudioContext = () => {
     const audioContextRef = useRef<AudioContext | null>(null);
+    const errorAudioRef = useRef<HTMLAudioElement | null>(null);
+    const successAudioRef = useRef<HTMLAudioElement | null>(null);
+    const confettiAudioRef = useRef<HTMLAudioElement | null>(null);
 
+    /**
+     * Initializes Web Audio API context on mount
+     * Cleans up on unmount to prevent memory leaks
+     */
     useEffect(() => {
         if (typeof window !== 'undefined') {
             audioContextRef.current = new window.AudioContext();
@@ -14,7 +47,23 @@ export const useAudioContext = () => {
         };
     }, []);
 
-    const playErrorSound = useCallback(() => {
+    /**
+     * Plays error sound using either custom audio file or synthesized tone
+     * Default: 200Hz sine wave for 100ms
+     *
+     * @param customAudioUrl - Optional path to custom error sound file
+     */
+    const playErrorSound = useCallback((customAudioUrl?: string) => {
+        if (customAudioUrl) {
+            if (!errorAudioRef.current) {
+                errorAudioRef.current = new Audio(customAudioUrl);
+                errorAudioRef.current.volume = 0.3;
+            }
+            errorAudioRef.current.currentTime = 0;
+            errorAudioRef.current.play().catch(() => {});
+            return;
+        }
+
         if (!audioContextRef.current) {
             return;
         }
@@ -31,11 +80,20 @@ export const useAudioContext = () => {
         o.stop(ctx.currentTime + 0.1);
     }, []);
 
+    /**
+     * Plays success sound using either custom audio file or synthesized tone
+     * Default: 800Hz sine wave for 80ms
+     *
+     * @param customAudioUrl - Optional path to custom success sound file
+     */
     const playSuccessSound = useCallback((customAudioUrl?: string) => {
         if (customAudioUrl) {
-            const audio = new Audio(customAudioUrl);
-            audio.volume = 0.3;
-            audio.play().catch(() => {});
+            if (!successAudioRef.current) {
+                successAudioRef.current = new Audio(customAudioUrl);
+                successAudioRef.current.volume = 0.3;
+            }
+            successAudioRef.current.currentTime = 0;
+            successAudioRef.current.play().catch(() => {});
             return;
         }
 
@@ -55,11 +113,20 @@ export const useAudioContext = () => {
         o.stop(ctx.currentTime + 0.08);
     }, []);
 
+    /**
+     * Plays celebration sound using either custom audio file or synthesized ascending tones
+     * Default: Three tones at 800Hz, 960Hz, 1120Hz for 300ms each
+     *
+     * @param customAudioUrl - Optional path to custom celebration sound file
+     */
     const playConfettiSound = useCallback((customAudioUrl?: string) => {
         if (customAudioUrl) {
-            const audio = new Audio(customAudioUrl);
-            audio.volume = 0.5;
-            audio.play().catch(() => {});
+            if (!confettiAudioRef.current) {
+                confettiAudioRef.current = new Audio(customAudioUrl);
+                confettiAudioRef.current.volume = 0.5;
+            }
+            confettiAudioRef.current.currentTime = 0;
+            confettiAudioRef.current.play().catch(() => {});
             return;
         }
 

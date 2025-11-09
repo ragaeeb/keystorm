@@ -25,6 +25,29 @@ const useStartGameOnEnter = (gameState: 'ready' | 'playing' | 'finished', startG
     }, [gameState, startGame]);
 };
 
+const useDebugMode = (
+    currentItemIndex: number,
+    totalItems: number,
+    setCurrentItemIndex: React.Dispatch<React.SetStateAction<number>>,
+) => {
+    useEffect(() => {
+        const handleDebugKey = (event: KeyboardEvent) => {
+            if (event.ctrlKey && event.shiftKey && event.key === 'D') {
+                event.preventDefault();
+                const isDev = process.env.NODE_ENV === 'development';
+                const hasDebugParam = typeof window !== 'undefined' && window.location.search.includes('debug=true');
+
+                if (isDev || hasDebugParam) {
+                    console.log('[Debug] Skipping to last item in level');
+                    setCurrentItemIndex(Math.max(0, totalItems - 1));
+                }
+            }
+        };
+        window.addEventListener('keydown', handleDebugKey);
+        return () => window.removeEventListener('keydown', handleDebugKey);
+    }, [currentItemIndex, totalItems, setCurrentItemIndex]);
+};
+
 export default function PracticePage() {
     const router = useRouter();
     const [activeLesson, setActiveLesson] = useState<ActiveLesson>();
@@ -57,6 +80,7 @@ export default function PracticePage() {
 
     usePersistPracticeSummary(mounted, completedLevels);
     useStartGameOnEnter(gameState, startGame);
+    useDebugMode(currentItemIndex, activeLesson?.content.length ?? 0, setCurrentItemIndex);
 
     const stats = useGameStats(typingState, activeLesson?.content[currentItemIndex] ?? '');
 
@@ -78,6 +102,8 @@ export default function PracticePage() {
     const currentText = activeLesson?.content[currentItemIndex] ?? '';
     const progress = currentText.length > 0 ? (typingState.userInput.length / currentText.length) * 100 : 0;
     const nextChar = typingState.userInput.length < currentText.length ? currentText[typingState.userInput.length] : '';
+
+    const itemProgress = activeLesson ? Math.round(((currentItemIndex + 1) / activeLesson.content.length) * 100) : 0;
 
     useEffect(() => {
         if (!mounted || lessons.length === 0) {
@@ -140,6 +166,7 @@ export default function PracticePage() {
             handleSubmit={handleSubmit}
             inputRef={inputRef}
             isLastLesson={activeLesson.index >= lessons.length - 1}
+            itemProgress={itemProgress}
             levelComplete={levelComplete}
             nextChar={nextChar}
             progress={progress}

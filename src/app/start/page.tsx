@@ -8,34 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DEFAULT_ISLAMIC_LESSONS } from '@/lib/default-lessons';
 import { isThemeAllowed } from '@/lib/theme-validation';
 import { getUserName, getUserTheme, saveUserName, saveUserTheme } from '@/lib/user-profile';
 import type { Lesson } from '@/types/lesson';
 
-/**
- * Stores lessons in session storage and resets letter practice completion status
- *
- * @param lessons - Array of lesson objects to store
- */
 const storeLessons = (lessons: ReadonlyArray<Lesson>) => {
     sessionStorage.setItem('lessons', JSON.stringify(lessons));
     sessionStorage.setItem('lettersCompleted', 'false');
 };
 
-/**
- * StartPage - Lesson setup and configuration
- *
- * Allows users to:
- * - Enter optional display name
- * - Choose a theme for personalized lessons (authenticated users only)
- * - Generate AI-powered lessons via /api/generate-lessons
- * - Use default Islamic-themed lessons as guest
- *
- * Validates themes for family-friendly content before API calls.
- *
- * @returns Rendered start page client component
- */
 export default function StartPage() {
     const router = useRouter();
     const { data: session } = useSession();
@@ -44,34 +25,19 @@ export default function StartPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    /**
-     * Checks if user has valid authentication session
-     */
     const isAuthenticated = useMemo(() => Boolean(session?.user), [session?.user]);
 
-    /**
-     * Loads saved name and theme from localStorage on mount
-     */
     useEffect(() => {
         setName(getUserName());
         setTheme(getUserTheme());
     }, []);
 
-    /**
-     * Starts practice with default lessons
-     * Saves name and navigates to learn page
-     */
     const handleDefaultStart = useCallback(() => {
-        storeLessons(DEFAULT_ISLAMIC_LESSONS);
+        sessionStorage.removeItem('lessons');
         saveUserName(name);
         router.push('/learn');
     }, [name, router]);
 
-    /**
-     * Generates personalized lessons via API
-     * Requires authentication and valid theme
-     * Saves lessons to session storage and navigates to learn page
-     */
     const handleSubmit = useCallback(async () => {
         if (!isAuthenticated) {
             setError('Sign in to personalize your lessons.');
@@ -92,7 +58,7 @@ export default function StartPage() {
         setError(null);
 
         try {
-            console.log('CALLING GENERATE LESSONS WITH', theme);
+            console.log('[StartPage] Requesting early lessons for theme:', theme);
             const response = await fetch('/api/generate-lessons', {
                 body: JSON.stringify({ theme: theme.trim() }),
                 headers: { 'Content-Type': 'application/json' },
@@ -110,6 +76,7 @@ export default function StartPage() {
                 throw new Error('Invalid response format from API');
             }
 
+            console.log('[StartPage] Received early lessons, storing in sessionStorage');
             storeLessons(data.lessons as Lesson[]);
             saveUserName(name);
             saveUserTheme(theme.trim());
@@ -136,7 +103,7 @@ export default function StartPage() {
                         <CardDescription>
                             {isAuthenticated
                                 ? 'Pick a theme to generate fresh lessons tailored just for you.'
-                                : 'Use our curated Islamic lessons or sign in to create personalized themes.'}
+                                : 'Use our curated lessons or sign in to create personalized themes.'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5">
@@ -166,7 +133,7 @@ export default function StartPage() {
                             <p className="text-gray-500 text-xs">
                                 {isAuthenticated
                                     ? 'We will validate your theme to keep the content family-friendly.'
-                                    : 'Sign in to unlock custom themes. Guest mode uses our Islamic starter set.'}
+                                    : 'Sign in to unlock custom themes. Default lessons load from our library.'}
                             </p>
                         </div>
 
@@ -178,10 +145,10 @@ export default function StartPage() {
                                 className="w-full bg-gradient-to-r from-indigo-600 to-purple-600"
                                 disabled={!isAuthenticated || loading || !theme.trim()}
                             >
-                                {loading ? 'Generating lessons…' : 'Generate personalized lessons'}
+                                {loading ? 'Generating early lessons…' : 'Generate personalized lessons'}
                             </Button>
                             <Button onClick={handleDefaultStart} variant="outline" className="w-full">
-                                Use default Islamic lessons
+                                Use default lessons
                             </Button>
                         </div>
                     </CardContent>

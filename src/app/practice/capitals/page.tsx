@@ -14,9 +14,6 @@ import { useTypingGame } from '@/hooks/useTypingGame';
 import { loadLevelFromJson } from '@/lib/lesson/lazy';
 import type { Lesson } from '@/types/lesson';
 
-/**
- * CapitalsPracticePage - Level 3 capital letters practice with Shift key
- */
 export default function CapitalsPracticePage() {
     const router = useRouter();
     const { playErrorSound, playSuccessSound, playConfettiSound } = useAudioContext();
@@ -35,13 +32,9 @@ export default function CapitalsPracticePage() {
         playSuccessSound,
     );
 
-    /**
-     * Load capitals lesson from sessionStorage or JSON file
-     */
     useEffect(() => {
         const loadCapitals = async () => {
             try {
-                // Try sessionStorage first (custom lessons)
                 const storedLessons = sessionStorage.getItem('lessons');
                 if (storedLessons) {
                     const parsed: Lesson[] = JSON.parse(storedLessons);
@@ -54,7 +47,6 @@ export default function CapitalsPracticePage() {
                     }
                 }
 
-                // Fallback to default JSON
                 const defaultLesson = await loadLevelFromJson(3);
                 setWords(defaultLesson.content);
             } catch (error) {
@@ -112,6 +104,23 @@ export default function CapitalsPracticePage() {
 
         return () => clearTimeout(timeout);
     }, [currentIndex, gameState, words.length, playConfettiSound, router]);
+
+    useEffect(() => {
+        const handleDebugKey = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                e.preventDefault();
+                const isDev = process.env.NODE_ENV === 'development';
+                const hasDebugParam = typeof window !== 'undefined' && window.location.search.includes('debug=true');
+
+                if (isDev || hasDebugParam) {
+                    console.log('[Debug] Skipping to last word');
+                    setCurrentIndex(Math.max(0, words.length - 1));
+                }
+            }
+        };
+        window.addEventListener('keydown', handleDebugKey);
+        return () => window.removeEventListener('keydown', handleDebugKey);
+    }, [words.length]);
 
     const handleSkip = useCallback(() => {
         sessionStorage.setItem('capitalsCompleted', 'true');
