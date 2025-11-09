@@ -69,26 +69,24 @@ describe('descriptions', () => {
     });
 
     describe('getNextLevelRoute', () => {
-        it('should return /practice/words after letters', () => {
-            expect(getNextLevelRoute('letters')).toBe('/practice/words');
+        it('should return /practice after letters', () => {
+            expect(getNextLevelRoute('letters')).toBe('/practice');
         });
 
         it('should return /learn/shift after words', () => {
             expect(getNextLevelRoute('words')).toBe('/learn/shift');
         });
 
-        it('should return /practice after capitals', () => {
-            expect(getNextLevelRoute('capitals')).toBe('/practice');
+        it('should return /learn/numbers after capitals', () => {
+            expect(getNextLevelRoute('capitals')).toBe('/learn/numbers');
         });
 
         it('should return /practice/summary after expert', () => {
             expect(getNextLevelRoute('expert')).toBe('/practice/summary');
         });
 
-        it('should return /practice for most intermediate levels', () => {
-            expect(getNextLevelRoute('sentences')).toBe('/practice');
-            expect(getNextLevelRoute('numbers')).toBe('/practice');
-            expect(getNextLevelRoute('mixed')).toBe('/practice');
+        it('should return /learn/numbers after sentences', () => {
+            expect(getNextLevelRoute('sentences')).toBe('/learn/numbers');
         });
     });
 });

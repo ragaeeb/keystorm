@@ -48,8 +48,8 @@ export const getCachedLessons = async (theme: string): Promise<Lesson[] | null> 
             return null;
         }
 
-        if (!Array.isArray(cached) || cached.length !== 10) {
-            console.warn('Invalid cached lesson structure, ignoring cache');
+        if (!Array.isArray(cached) || cached.length !== 4) {
+            console.warn('Invalid cached lesson structure (expected 4 early levels), ignoring cache');
             return null;
         }
 

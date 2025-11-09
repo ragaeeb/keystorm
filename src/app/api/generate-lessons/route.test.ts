@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
 import type { NextRequest } from 'next/server';
-import { POST } from './route';
+
+// Mock Redis BEFORE importing auth module
+mock.module('@upstash/redis', () => ({
+    Redis: class MockRedis {
+        static fromEnv() {
+            return new MockRedis();
+        }
+    },
+}));
 
 const mockAuth = mock(() => Promise.resolve(null));
 const mockGenerateLessons = mock(() => Promise.resolve([]));
@@ -11,6 +19,9 @@ mock.module('@/auth', () => ({ auth: mockAuth }));
 mock.module('@/lib/lesson/generator', () => ({ generateLessons: mockGenerateLessons }));
 
 mock.module('@/lib/theme-validation', () => ({ isThemeAllowed: mockIsThemeAllowed }));
+
+// Import POST after all mocks are set up
+const { POST } = await import('./route');
 
 const createMockRequest = (body: unknown) => {
     return { json: async () => body } as NextRequest;

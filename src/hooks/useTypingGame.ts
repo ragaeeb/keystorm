@@ -44,7 +44,7 @@ type UseTypingGameReturn = {
 export const useTypingGame = (
     currentText: string,
     onError: () => void,
-    onSuccess?: (audioPath?: string) => void,
+    onSuccess?: () => void,
 ): UseTypingGameReturn => {
     const [gameState, setGameState] = useState<'ready' | 'playing' | 'finished'>('ready');
     const [typingState, setTypingState] = useState<TypingState>({
@@ -82,11 +82,19 @@ export const useTypingGame = (
                 if (value.length > prevLength) {
                     const lastChar = value[value.length - 1];
                     const expectedChar = currentText[value.length - 1];
+                    console.log('[handleInputChange] New char typed:', {
+                        expectedChar,
+                        lastChar,
+                        match: lastChar === expectedChar,
+                    });
+
                     if (lastChar !== expectedChar) {
                         newState.errors = prev.errors + 1;
                         onError();
                     } else if (onSuccess) {
-                        onSuccess('/sfx/keypress.mp3');
+                        console.log('[handleInputChange] Calling onSuccess callback');
+
+                        onSuccess();
                     }
                 }
 

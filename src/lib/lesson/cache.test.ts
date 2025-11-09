@@ -90,12 +90,6 @@ describe('cache', () => {
                 { content: ['cat', 'dog'], level: 2, type: 'words' },
                 { content: ['Alice', 'Bob'], level: 3, type: 'capitals' },
                 { content: ['Hello world.'], level: 4, type: 'sentences' },
-                { content: ['5 items'], level: 5, type: 'numbers' },
-                { content: ['Mixed 7 case'], level: 6, type: 'mixed' },
-                { content: ['Punctuation: test!'], level: 7, type: 'punctuation' },
-                { content: ['Paragraph text'], level: 8, type: 'paragraphs' },
-                { content: ['Advanced content'], level: 9, type: 'advanced' },
-                { content: ['Expert level'], level: 10, type: 'expert' },
             ];
             mockRedisInstance.get.mockResolvedValue(mockLessons);
 
