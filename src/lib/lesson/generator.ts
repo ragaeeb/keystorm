@@ -1,5 +1,5 @@
+import { GeminiModel, generateWithGemini } from '@/lib/gemini';
 import type { Lesson } from '@/types/lesson';
-import { GeminiModel, generateWithGemini } from './gemini';
 
 type GeneratedContent = { letters: string[]; words: string[]; sentences: string[]; paragraphs: string[] };
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
     type ChangeEvent,
     type FormEvent,
-    type MutableRefObject,
+    type RefObject,
     useCallback,
     useEffect,
     useMemo,
@@ -24,8 +24,8 @@ import { useAudioContext } from '@/hooks/useAudioContext';
 import { useGameStats } from '@/hooks/useGameStats';
 import { useTypingGame } from '@/hooks/useTypingGame';
 import { DEFAULT_ISLAMIC_LESSONS } from '@/lib/default-lessons';
-import { getLevelDescription } from '@/lib/lesson-descriptions';
-import { normalizeLessonContent } from '@/lib/lesson-normalizer';
+import { getLevelDescription } from '@/lib/lesson/descriptions';
+import { normalizeLessonContent } from '@/lib/lesson/normalizer';
 import type { Lesson } from '@/types/lesson';
 
 type ActiveLesson = Lesson & { index: number };
@@ -143,12 +143,7 @@ type LevelProgressParams = {
     activeLesson: ActiveLesson | null;
     currentItemIndex: number;
     gameState: 'ready' | 'playing' | 'finished';
-    levelProgressRef: MutableRefObject<{
-        totalAccuracy: number;
-        totalErrors: number;
-        totalWpm: number;
-        items: number;
-    } | null>;
+    levelProgressRef: RefObject<{ totalAccuracy: number; totalErrors: number; totalWpm: number; items: number } | null>;
     playConfettiSound: () => void;
     resetGame: () => void;
     setCompletedLevels: React.Dispatch<React.SetStateAction<LevelSummary[]>>;

@@ -7,9 +7,26 @@ import FingerLegend from '@/components/typing/FingerLegend';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+/**
+ * LearnPage - Keyboard positioning tutorial
+ *
+ * Displays an educational guide showing:
+ * - Proper home row finger positioning (ASDF JKL;)
+ * - Visual keyboard layout with color-coded finger zones
+ * - Finger legends for left and right hands
+ * - Instructions for proceeding to letter practice
+ *
+ * Listens for Enter key to advance to practice automatically.
+ *
+ * @returns Rendered learn page client component
+ */
 export default function LearnPage() {
     const router = useRouter();
 
+    /**
+     * Sets up keyboard listener for Enter key to proceed to practice
+     * Cleanup removes listener on unmount
+     */
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Enter') {

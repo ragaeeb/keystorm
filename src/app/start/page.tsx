@@ -13,11 +13,29 @@ import { isThemeAllowed } from '@/lib/theme-validation';
 import { getUserName, getUserTheme, saveUserName, saveUserTheme } from '@/lib/user-profile';
 import type { Lesson } from '@/types/lesson';
 
+/**
+ * Stores lessons in session storage and resets letter practice completion status
+ *
+ * @param lessons - Array of lesson objects to store
+ */
 const storeLessons = (lessons: ReadonlyArray<Lesson>) => {
     sessionStorage.setItem('lessons', JSON.stringify(lessons));
     sessionStorage.setItem('lettersCompleted', 'false');
 };
 
+/**
+ * StartPage - Lesson setup and configuration
+ *
+ * Allows users to:
+ * - Enter optional display name
+ * - Choose a theme for personalized lessons (authenticated users only)
+ * - Generate AI-powered lessons via /api/generate-lessons
+ * - Use default Islamic-themed lessons as guest
+ *
+ * Validates themes for family-friendly content before API calls.
+ *
+ * @returns Rendered start page client component
+ */
 export default function StartPage() {
     const router = useRouter();
     const { data: session } = useSession();
@@ -26,19 +44,34 @@ export default function StartPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    /**
+     * Checks if user has valid authentication session
+     */
     const isAuthenticated = useMemo(() => Boolean(session?.user), [session?.user]);
 
+    /**
+     * Loads saved name and theme from localStorage on mount
+     */
     useEffect(() => {
         setName(getUserName());
         setTheme(getUserTheme());
     }, []);
 
+    /**
+     * Starts practice with default lessons
+     * Saves name and navigates to learn page
+     */
     const handleDefaultStart = useCallback(() => {
         storeLessons(DEFAULT_ISLAMIC_LESSONS);
         saveUserName(name);
         router.push('/learn');
     }, [name, router]);
 
+    /**
+     * Generates personalized lessons via API
+     * Requires authentication and valid theme
+     * Saves lessons to session storage and navigates to learn page
+     */
     const handleSubmit = useCallback(async () => {
         if (!isAuthenticated) {
             setError('Sign in to personalize your lessons.');

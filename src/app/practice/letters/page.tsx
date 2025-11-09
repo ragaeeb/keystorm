@@ -16,6 +16,24 @@ import type { Lesson } from '@/types/lesson';
 
 const LETTER_LESSON = DEFAULT_ISLAMIC_LESSONS.find((lesson) => lesson.type === 'letters');
 
+/**
+ * LetterPracticePage - Level 1 individual letter typing practice
+ *
+ * Provides focused practice on typing individual letters with:
+ * - Visual keyboard highlighting showing which finger to use
+ * - Audio feedback for correct/incorrect keystrokes
+ * - Automatic progression through all 27 letters
+ * - Confetti celebration on completion
+ * - Optional skip to advance to word practice
+ *
+ * Letters are loaded from either:
+ * - Personalized lessons (from sessionStorage if user generated custom theme)
+ * - Default Islamic lessons (fallback)
+ *
+ * Progress automatically saved to sessionStorage on completion.
+ *
+ * @returns Rendered letter practice client component
+ */
 export default function LetterPracticePage() {
     const router = useRouter();
     const { playErrorSound, playSuccessSound, playConfettiSound } = useAudioContext();
@@ -26,16 +44,17 @@ export default function LetterPracticePage() {
 
     const currentLetter = letters[currentIndex] ?? '';
 
-    const handleSuccess = useCallback(() => {
-        playSuccessSound();
-    }, [playSuccessSound]);
-
     const { typingState, gameState, inputRef, startGame, handleInputChange, resetGame } = useTypingGame(
         currentLetter,
         playErrorSound,
-        handleSuccess,
+        playSuccessSound,
     );
 
+    /**
+     * Loads custom lessons from sessionStorage if available
+     * Falls back to default letter lesson if not found or parsing fails
+     * Sets mounted flag to trigger game initialization
+     */
     useEffect(() => {
         const storedLessons = sessionStorage.getItem('lessons');
         if (storedLessons) {
@@ -52,6 +71,10 @@ export default function LetterPracticePage() {
         setMounted(true);
     }, []);
 
+    /**
+     * Resets and starts the game whenever the current letter changes
+     * Ensures input is focused and scrolled into view for accessibility
+     */
     useEffect(() => {
         if (!mounted || !currentLetter) {
             return;
@@ -65,6 +88,10 @@ export default function LetterPracticePage() {
         }, 100);
     }, [currentLetter, inputRef, mounted, resetGame, startGame]);
 
+    /**
+     * Calculates overall progress through the letter sequence
+     * Accounts for current letter completion in percentage
+     */
     const progress = useMemo(() => {
         if (letters.length === 0) {
             return 0;
@@ -72,10 +99,18 @@ export default function LetterPracticePage() {
         return Math.round(((currentIndex + (gameState === 'finished' ? 1 : 0)) / letters.length) * 100);
     }, [currentIndex, gameState, letters.length]);
 
+    /**
+     * Determines the next expected character for keyboard highlighting
+     * Returns empty string if user has completed typing the current letter
+     */
     const nextChar = useMemo(() => {
         return typingState.userInput.length < currentLetter.length ? currentLetter[typingState.userInput.length] : '';
     }, [currentLetter, typingState.userInput.length]);
 
+    /**
+     * Handles letter input changes, enforcing single-character input
+     * Only accepts the most recently typed character
+     */
     const handleLetterChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
             event.persist?.();
@@ -90,6 +125,11 @@ export default function LetterPracticePage() {
         [handleInputChange],
     );
 
+    /**
+     * Advances to next letter or completes the level
+     * Triggers confetti animation and saves progress on final letter
+     * Automatically redirects to main practice after completion celebration
+     */
     useEffect(() => {
         if (gameState !== 'finished') {
             return;
@@ -111,6 +151,10 @@ export default function LetterPracticePage() {
         return () => clearTimeout(timeout);
     }, [currentIndex, gameState, letters.length, playConfettiSound, router]);
 
+    /**
+     * Allows user to skip letter practice and proceed directly to word practice
+     * Marks letters as completed in sessionStorage
+     */
     const handleSkip = useCallback(() => {
         sessionStorage.setItem('lettersCompleted', 'true');
         router.push('/practice');

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
-import { getLevelDescription } from './lesson-descriptions';
+import { getLevelDescription } from './descriptions';
 
-describe('lesson-descriptions', () => {
+describe('descriptions', () => {
     describe('getLevelDescription', () => {
         it('should return description for letters level', () => {
             const desc = getLevelDescription('letters', 1);

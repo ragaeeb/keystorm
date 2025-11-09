@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import type { Lesson } from '@/types/lesson';
-import { normalizeLessonContent } from './lesson-normalizer';
+import { normalizeLessonContent } from './normalizer';
 
-describe('lesson-normalizer', () => {
+describe('normalizer', () => {
     describe('normalizeLessonContent', () => {
         it('should convert words to lowercase', () => {
             const lessons: Lesson[] = [{ content: ['Hello', 'WORLD', 'TeSt'], level: 2, type: 'words' }];
