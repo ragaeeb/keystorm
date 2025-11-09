@@ -85,8 +85,8 @@ type Lesson = {
 
 ### Adding a New Level Type
 1. Add type to `src/types/lesson.ts`
-2. Update `getLevelDescription()` in `lib/lesson-descriptions.ts`
-3. Modify Gemini prompt in `lib/lesson-generator.ts`
+2. Update `getLevelDescription()` in `lib/lesson/descriptions.ts`
+3. Modify Gemini prompt in `lib/lesson/generator.ts`
 4. Update validation in `validateResponse()`
 
 ### Modifying Keyboard Layout
@@ -100,7 +100,7 @@ type Lesson = {
 - Keep durations <300ms for responsive feel
 
 ### Customizing Lesson Generation
-- Edit prompts in `lib/lesson-generator.ts`
+- Edit prompts in `lib/lesson/generator.ts`
 - Adjust validation rules in `validateResponse()`
 - Consider rate limits (3 retries, 60s timeout)
 - Use `GeminiModel.FlashLiteV2_5` for cost efficiency
@@ -155,7 +155,7 @@ bun run lint             # Run Biome linter
 - Update UI in `app/landing/page.tsx`
 
 ### Custom Lesson Algorithms
-- Implement in `lib/lesson-generator.ts`
+- Implement in `lib/lesson/generator.ts`
 - Can replace Gemini with custom logic
 - Must return same `Lesson[]` structure
 

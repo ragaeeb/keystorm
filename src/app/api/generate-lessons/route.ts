@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
-import { generateLessons } from '@/lib/lesson-generator';
+import { generateLessons } from '@/lib/lesson/generator';
 import { isThemeAllowed } from '@/lib/theme-validation';
 
 const payloadSchema = z.object({ theme: z.string().min(1) });
