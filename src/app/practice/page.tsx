@@ -8,12 +8,10 @@ import { useAudioContext } from '@/hooks/useAudioContext';
 import { useDebugSkip } from '@/hooks/useDebugSkip';
 import { useGameStats } from '@/hooks/useGameStats';
 import { useLevelProgression } from '@/hooks/useLevelProgression';
-import { usePersistPracticeSummary } from '@/hooks/usePersistPracticeSummary';
-import { usePracticeLessons } from '@/hooks/usePracticeLessons';
 import { useTypingGame } from '@/hooks/useTypingGame';
 import { getNextLevelRoute } from '@/lib/lesson/descriptions';
-import { loadLevelFromJson } from '@/lib/lesson/lazy';
-import type { ActiveLesson, Lesson, LevelSummary } from '@/types/lesson';
+import { useLessonStore } from '@/store/useLessonStore';
+import type { ActiveLesson } from '@/types/lesson';
 
 const useStartGameOnEnter = (gameState: 'ready' | 'playing' | 'finished', startGame: () => void) => {
     useEffect(() => {
@@ -34,8 +32,14 @@ export default function PracticePage() {
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
     const [showConfetti, setShowConfetti] = useState(false);
     const [levelComplete, setLevelComplete] = useState(false);
-    const [completedLevels, setCompletedLevels] = useState<LevelSummary[]>([]);
-    const [isLoadingNextLevel, setIsLoadingNextLevel] = useState(false);
+
+    const lessons = useLessonStore((state) => state.lessons);
+    const loadLevel = useLessonStore((state) => state.loadLevel);
+    const isLoading = useLessonStore((state) => state.isLoading);
+    const completionFlags = useLessonStore((state) => state.completionFlags);
+    const completedLevels = useLessonStore((state) => state.completedLevels);
+    const addCompletedLevel = useLessonStore((state) => state.addCompletedLevel);
+    const resetProgress = useLessonStore((state) => state.resetProgress);
 
     const levelProgressRef = useRef<{
         totalAccuracy: number;
@@ -44,27 +48,17 @@ export default function PracticePage() {
         items: number;
     } | null>(null);
 
-    const resetProgress = useCallback(() => {
-        setCompletedLevels([]);
-        levelProgressRef.current = null;
-    }, []);
-
-    const { lessons, mounted } = usePracticeLessons(router, resetProgress);
-    const [allLessons, setAllLessons] = useState<Lesson[]>([]);
-
     const { playErrorSound, playSuccessSound, playConfettiSound } = useAudioContext();
 
-    // Check if this is the last item of the current level
     const isLastItemOfLevel = activeLesson && currentItemIndex === activeLesson.content.length - 1;
 
     const { typingState, gameState, inputRef, startGame, handleInputChange, resetGame } = useTypingGame(
         activeLesson?.content[currentItemIndex] ?? '',
         playErrorSound,
         playSuccessSound,
-        isLastItemOfLevel ? playConfettiSound : undefined, // <-- Use undefined
+        isLastItemOfLevel ? playConfettiSound : undefined,
     );
 
-    usePersistPracticeSummary(mounted, completedLevels);
     useStartGameOnEnter(gameState, startGame);
 
     useDebugSkip(
@@ -77,12 +71,13 @@ export default function PracticePage() {
 
     useLevelProgression({
         activeLesson,
+        completedLevels,
         currentItemIndex,
         gameState,
         levelProgressRef,
+        onAddCompletedLevel: addCompletedLevel,
         resetGame,
         router,
-        setCompletedLevels,
         setCurrentItemIndex,
         setLevelComplete,
         setShowConfetti,
@@ -91,16 +86,61 @@ export default function PracticePage() {
     });
 
     useEffect(() => {
-        if (mounted && lessons.length > 0) {
-            setAllLessons(lessons); // Initialize with the lessons from the hook
-            setActiveLesson({ ...lessons[0], index: 0 });
+        const initializePractice = async () => {
+            if (!completionFlags.lettersCompleted) {
+                router.replace('/practice/letters');
+                return;
+            }
+
+            resetProgress();
+
+            const filteredLessons = lessons.filter((lesson) => {
+                if (lesson.type === 'letters') {
+                    return false;
+                }
+                if (completionFlags.capitalsCompleted && (lesson.type === 'words' || lesson.type === 'capitals')) {
+                    return false;
+                }
+                if (completionFlags.numbersCompleted && (lesson.type === 'sentences' || lesson.type === 'numbers')) {
+                    return false;
+                }
+                if (
+                    completionFlags.punctuationCompleted &&
+                    (lesson.type === 'mixed' || lesson.type === 'punctuation')
+                ) {
+                    return false;
+                }
+                return true;
+            });
+
+            if (filteredLessons.length === 0) {
+                const nextLevel = lessons.length > 0 ? Math.max(...lessons.map((l) => l.level)) + 1 : 2;
+                if (nextLevel <= 10) {
+                    const loaded = await loadLevel(nextLevel);
+                    if (loaded) {
+                        setActiveLesson({ ...loaded, index: 0 });
+                        setCurrentItemIndex(0);
+                        levelProgressRef.current = null;
+                        setLevelComplete(false);
+                        setShowConfetti(false);
+                        resetGame();
+                    }
+                } else {
+                    router.push('/practice/summary');
+                }
+                return;
+            }
+
+            setActiveLesson({ ...filteredLessons[0], index: 0 });
             setCurrentItemIndex(0);
             levelProgressRef.current = null;
             setLevelComplete(false);
             setShowConfetti(false);
             resetGame();
-        }
-    }, [lessons, mounted, resetGame]);
+        };
+
+        initializePractice();
+    }, [completionFlags, lessons, loadLevel, resetGame, resetProgress, router]);
 
     const currentText = activeLesson?.content[currentItemIndex] ?? '';
     const progress = currentText.length > 0 ? (typingState.userInput.length / currentText.length) * 100 : 0;
@@ -108,20 +148,7 @@ export default function PracticePage() {
 
     const itemProgress = activeLesson ? Math.round(((currentItemIndex + 1) / activeLesson.content.length) * 100) : 0;
 
-    useEffect(() => {
-        if (mounted && lessons.length > 0) {
-            setAllLessons(lessons); // Initialize with the lessons from the hook
-            setActiveLesson({ ...lessons[0], index: 0 });
-            setCurrentItemIndex(0);
-            levelProgressRef.current = null;
-            setLevelComplete(false);
-            setShowConfetti(false);
-            resetGame();
-        }
-    }, [lessons, mounted, resetGame]);
-
     const handleNext = useCallback(async () => {
-        // <-- MAKE THIS ASYNC
         if (!activeLesson) {
             return;
         }
@@ -135,44 +162,20 @@ export default function PracticePage() {
             return;
         }
 
-        const isLastLessonInCurrentList = activeLesson.index === allLessons.length - 1;
-
-        // --- FIX: Dynamic loading logic ---
-        if (isLastLessonInCurrentList && activeLesson.level < 10) {
-            setIsLoadingNextLevel(true);
-            try {
-                // Load the next level's JSON file on demand
-                const nextLesson = await loadLevelFromJson(activeLesson.level + 1);
-                const nextLessonIndex = activeLesson.index + 1;
-
-                setAllLessons((prev) => [...prev, nextLesson]); // Add it to our list
-                setActiveLesson({ ...nextLesson, index: nextLessonIndex }); // Set it as active
+        const nextLevel = activeLesson.level + 1;
+        if (nextLevel <= 10) {
+            const loaded = await loadLevel(nextLevel);
+            if (loaded) {
+                setActiveLesson({ ...loaded, index: 0 });
                 setCurrentItemIndex(0);
                 levelProgressRef.current = null;
                 resetGame();
-            } catch (err) {
-                console.error('Failed to load next level, redirecting to summary', err);
-                router.push('/practice/summary'); // Failsafe
-            } finally {
-                setIsLoadingNextLevel(false);
+                return;
             }
-            return;
-        }
-        // --- END FIX ---
-
-        if (activeLesson.index < allLessons.length - 1) {
-            // Check against allLessons
-            const nextLesson = allLessons[activeLesson.index + 1]; // Get from allLessons
-            setActiveLesson({ ...nextLesson, index: activeLesson.index + 1 });
-            setCurrentItemIndex(0);
-            levelProgressRef.current = null;
-            resetGame();
-            return;
         }
 
-        // Only go to summary if we're truly done
         router.push('/practice/summary');
-    }, [activeLesson, allLessons, resetGame, router]);
+    }, [activeLesson, loadLevel, resetGame, router]);
 
     const handleSubmit = useCallback(
         (event: FormEvent<HTMLFormElement>) => {
@@ -184,7 +187,7 @@ export default function PracticePage() {
         [levelComplete, handleNext],
     );
 
-    if (!mounted || !activeLesson || isLoadingNextLevel) {
+    if (!activeLesson || isLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
                 <Card className="p-8">

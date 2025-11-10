@@ -11,8 +11,7 @@ import { GradientProgress } from '@/components/ui/gradient-progress';
 import { Input } from '@/components/ui/input';
 import { useAudioContext } from '@/hooks/useAudioContext';
 import { useTypingGame } from '@/hooks/useTypingGame';
-import { loadLevelFromJson } from '@/lib/lesson/lazy';
-import type { Lesson } from '@/types/lesson';
+import { useLessonStore } from '@/store/useLessonStore';
 
 export default function CapitalsPracticePage() {
     const router = useRouter();
@@ -21,50 +20,44 @@ export default function CapitalsPracticePage() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [mounted, setMounted] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
-    const [loading, setLoading] = useState(true);
+
+    const lessons = useLessonStore((state) => state.lessons);
+    const loadLevel = useLessonStore((state) => state.loadLevel);
+    const isLoading = useLessonStore((state) => state.isLoading);
+    const setCompletionFlag = useLessonStore((state) => state.setCompletionFlag);
 
     const currentWord = words[currentIndex] ?? '';
-
-    // Check if this is the last word
     const isLastWord = mounted && words.length > 0 && currentIndex === words.length - 1;
 
     const { typingState, gameState, inputRef, startGame, handleInputChange, resetGame } = useTypingGame(
         currentWord,
         playErrorSound,
         playSuccessSound,
-        isLastWord ? playConfettiSound : undefined, // <-- Use undefined
+        isLastWord ? playConfettiSound : undefined,
     );
 
     useEffect(() => {
         const loadCapitals = async () => {
-            try {
-                const storedLessons = sessionStorage.getItem('lessons');
-                if (storedLessons) {
-                    const parsed: Lesson[] = JSON.parse(storedLessons);
-                    const capitalsLesson = parsed.find((lesson) => lesson.type === 'capitals');
-                    if (capitalsLesson) {
-                        setWords(capitalsLesson.content);
-                        setMounted(true);
-                        setLoading(false);
-                        return;
-                    }
-                }
+            const capitalsLesson = lessons.find((lesson) => lesson.type === 'capitals');
 
-                const defaultLesson = await loadLevelFromJson(3);
-                setWords(defaultLesson.content);
-            } catch (error) {
-                console.error('Failed to load capitals lesson:', error);
-            } finally {
+            if (capitalsLesson) {
+                setWords(capitalsLesson.content);
                 setMounted(true);
-                setLoading(false);
+                return;
             }
+
+            const loaded = await loadLevel(3);
+            if (loaded) {
+                setWords(loaded.content);
+            }
+            setMounted(true);
         };
 
         loadCapitals();
-    }, []);
+    }, [lessons, loadLevel]);
 
     useEffect(() => {
-        if (!mounted || !currentWord || loading) {
+        if (!mounted || !currentWord || isLoading) {
             return;
         }
         resetGame();
@@ -74,7 +67,7 @@ export default function CapitalsPracticePage() {
             el?.focus();
             el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
-    }, [currentWord, inputRef, mounted, loading, resetGame, startGame]);
+    }, [currentWord, inputRef, mounted, isLoading, resetGame, startGame]);
 
     const progress = useMemo(() => {
         if (words.length === 0) {
@@ -98,14 +91,14 @@ export default function CapitalsPracticePage() {
             } else {
                 setShowConfetti(true);
                 setTimeout(() => {
-                    sessionStorage.setItem('capitalsCompleted', 'true');
+                    setCompletionFlag('capitalsCompleted', true);
                     router.push('/practice');
                 }, 2500);
             }
         }, 250);
 
         return () => clearTimeout(timeout);
-    }, [currentIndex, gameState, words.length, router]);
+    }, [currentIndex, gameState, words.length, router, setCompletionFlag]);
 
     useEffect(() => {
         const handleDebugKey = (e: KeyboardEvent) => {
@@ -125,11 +118,11 @@ export default function CapitalsPracticePage() {
     }, [words.length]);
 
     const handleSkip = useCallback(() => {
-        sessionStorage.setItem('capitalsCompleted', 'true');
+        setCompletionFlag('capitalsCompleted', true);
         router.push('/practice');
-    }, [router]);
+    }, [router, setCompletionFlag]);
 
-    if (loading) {
+    if (isLoading || !mounted) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
                 <Card className="p-8">

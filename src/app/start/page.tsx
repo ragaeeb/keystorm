@@ -10,12 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { isThemeAllowed } from '@/lib/theme-validation';
 import { getUserName, getUserTheme, saveUserName, saveUserTheme } from '@/lib/user-profile';
+import { useLessonStore } from '@/store/useLessonStore';
 import type { Lesson } from '@/types/lesson';
-
-const storeLessons = (lessons: ReadonlyArray<Lesson>) => {
-    sessionStorage.setItem('lessons', JSON.stringify(lessons));
-    sessionStorage.setItem('lettersCompleted', 'false');
-};
 
 export default function StartPage() {
     const router = useRouter();
@@ -25,6 +21,9 @@ export default function StartPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const setLessons = useLessonStore((state) => state.setLessons);
+    const resetProgress = useLessonStore((state) => state.resetProgress);
+
     const isAuthenticated = useMemo(() => Boolean(session?.user), [session?.user]);
 
     useEffect(() => {
@@ -33,10 +32,10 @@ export default function StartPage() {
     }, []);
 
     const handleDefaultStart = useCallback(() => {
-        sessionStorage.removeItem('lessons');
+        resetProgress();
         saveUserName(name);
         router.push('/learn');
-    }, [name, router]);
+    }, [name, router, resetProgress]);
 
     const handleSubmit = useCallback(async () => {
         if (!isAuthenticated) {
@@ -76,8 +75,8 @@ export default function StartPage() {
                 throw new Error('Invalid response format from API');
             }
 
-            console.log('[StartPage] Received early lessons, storing in sessionStorage');
-            storeLessons(data.lessons as Lesson[]);
+            console.log('[StartPage] Received early lessons, storing in Zustand');
+            setLessons(data.lessons as Lesson[]);
             saveUserName(name);
             saveUserTheme(theme.trim());
 
@@ -88,7 +87,7 @@ export default function StartPage() {
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, name, router, theme]);
+    }, [isAuthenticated, name, router, theme, setLessons]);
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">

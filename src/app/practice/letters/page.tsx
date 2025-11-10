@@ -11,8 +11,7 @@ import { GradientProgress } from '@/components/ui/gradient-progress';
 import { Input } from '@/components/ui/input';
 import { useAudioContext } from '@/hooks/useAudioContext';
 import { useTypingGame } from '@/hooks/useTypingGame';
-import { loadLevelFromJson } from '@/lib/lesson/lazy';
-import type { Lesson } from '@/types/lesson';
+import { useLessonStore } from '@/store/useLessonStore';
 
 export default function LetterPracticePage() {
     const router = useRouter();
@@ -21,50 +20,44 @@ export default function LetterPracticePage() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [mounted, setMounted] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
-    const [loading, setLoading] = useState(true);
+
+    const lessons = useLessonStore((state) => state.lessons);
+    const loadLevel = useLessonStore((state) => state.loadLevel);
+    const isLoading = useLessonStore((state) => state.isLoading);
+    const setCompletionFlag = useLessonStore((state) => state.setCompletionFlag);
 
     const currentLetter = letters[currentIndex] ?? '';
-
-    // Check if this is the last letter
     const isLastLetter = mounted && letters.length > 0 && currentIndex === letters.length - 1;
 
     const { typingState, gameState, inputRef, startGame, handleInputChange, resetGame } = useTypingGame(
         currentLetter,
         playErrorSound,
         playSuccessSound,
-        isLastLetter ? playConfettiSound : undefined, // <-- Use undefined
+        isLastLetter ? playConfettiSound : undefined,
     );
 
     useEffect(() => {
         const loadLetters = async () => {
-            try {
-                const storedLessons = sessionStorage.getItem('lessons');
-                if (storedLessons) {
-                    const parsed: Lesson[] = JSON.parse(storedLessons);
-                    const letterLesson = parsed.find((lesson) => lesson.type === 'letters');
-                    if (letterLesson) {
-                        setLetters(letterLesson.content);
-                        setMounted(true);
-                        setLoading(false);
-                        return;
-                    }
-                }
+            const letterLesson = lessons.find((lesson) => lesson.type === 'letters');
 
-                const defaultLesson = await loadLevelFromJson(1);
-                setLetters(defaultLesson.content);
-            } catch (error) {
-                console.error('Failed to load letter lesson:', error);
-            } finally {
+            if (letterLesson) {
+                setLetters(letterLesson.content);
                 setMounted(true);
-                setLoading(false);
+                return;
             }
+
+            const loaded = await loadLevel(1);
+            if (loaded) {
+                setLetters(loaded.content);
+            }
+            setMounted(true);
         };
 
         loadLetters();
-    }, []);
+    }, [lessons, loadLevel]);
 
     useEffect(() => {
-        if (!mounted || !currentLetter || loading) {
+        if (!mounted || !currentLetter || isLoading) {
             return;
         }
         resetGame();
@@ -74,7 +67,7 @@ export default function LetterPracticePage() {
             el?.focus();
             el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
-    }, [currentLetter, inputRef, mounted, loading, resetGame, startGame]);
+    }, [currentLetter, inputRef, mounted, isLoading, resetGame, startGame]);
 
     const progress = useMemo(() => {
         if (letters.length === 0) {
@@ -112,19 +105,19 @@ export default function LetterPracticePage() {
             } else {
                 setShowConfetti(true);
                 setTimeout(() => {
-                    sessionStorage.setItem('lettersCompleted', 'true');
+                    setCompletionFlag('lettersCompleted', true);
                     router.push('/practice');
                 }, 2500);
             }
         }, 250);
 
         return () => clearTimeout(timeout);
-    }, [currentIndex, gameState, letters.length, router]);
+    }, [currentIndex, gameState, letters.length, router, setCompletionFlag]);
 
     const handleSkip = useCallback(() => {
-        sessionStorage.setItem('lettersCompleted', 'true');
+        setCompletionFlag('lettersCompleted', true);
         router.push('/practice');
-    }, [router]);
+    }, [router, setCompletionFlag]);
 
     useEffect(() => {
         const handleDebugKey = (e: KeyboardEvent) => {
@@ -143,7 +136,7 @@ export default function LetterPracticePage() {
         return () => window.removeEventListener('keydown', handleDebugKey);
     }, [letters.length]);
 
-    if (loading) {
+    if (isLoading || !mounted) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
                 <Card className="p-8">
