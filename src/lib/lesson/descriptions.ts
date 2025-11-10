@@ -3,10 +3,9 @@ import type { LessonType } from '@/types/lesson';
 /**
  * Gets the instructional description for a typing lesson level
  * @param type - The type of lesson content
- * @param level - The level number (1-10)
  * @returns User-friendly description of what the level will test
  */
-export const getLevelDescription = (type: LessonType, level: number): string => {
+export const getLevelDescription = (type: LessonType): string => {
     switch (type) {
         case 'letters':
             return 'practice individual letters to build muscle memory for each key position';

@@ -4,66 +4,66 @@ import { getLevelDescription, getNextLevelRoute } from './descriptions';
 describe('descriptions', () => {
     describe('getLevelDescription', () => {
         it('should return description for letters level', () => {
-            const desc = getLevelDescription('letters', 1);
+            const desc = getLevelDescription('letters');
             expect(desc).toContain('individual letters');
             expect(desc).toContain('muscle memory');
         });
 
         it('should return description for words level', () => {
-            const desc = getLevelDescription('words', 2);
+            const desc = getLevelDescription('words');
             expect(desc).toContain('lowercase');
             expect(desc).toContain('transitions');
         });
 
         it('should return description for capitals level', () => {
-            const desc = getLevelDescription('capitals', 3);
+            const desc = getLevelDescription('capitals');
             expect(desc).toContain('capital letters');
             expect(desc).toContain('Shift key');
         });
 
         it('should return description for sentences level', () => {
-            const desc = getLevelDescription('sentences', 4);
+            const desc = getLevelDescription('sentences');
             expect(desc).toContain('sentences');
             expect(desc).toContain('punctuation');
         });
 
         it('should return description for numbers level', () => {
-            const desc = getLevelDescription('numbers', 5);
+            const desc = getLevelDescription('numbers');
             expect(desc).toContain('number row');
             expect(desc).toContain('symbols');
         });
 
         it('should return description for mixed level', () => {
-            const desc = getLevelDescription('mixed', 6);
+            const desc = getLevelDescription('mixed');
             expect(desc).toContain('letters');
             expect(desc).toContain('numbers');
         });
 
         it('should return description for punctuation level', () => {
-            const desc = getLevelDescription('punctuation', 7);
+            const desc = getLevelDescription('punctuation');
             expect(desc).toContain('punctuation');
             expect(desc).toContain('symbols');
         });
 
         it('should return description for paragraphs level', () => {
-            const desc = getLevelDescription('paragraphs', 8);
+            const desc = getLevelDescription('paragraphs');
             expect(desc).toContain('paragraphs');
         });
 
         it('should return description for advanced level', () => {
-            const desc = getLevelDescription('advanced', 9);
+            const desc = getLevelDescription('advanced');
             expect(desc).toContain('passages');
             expect(desc).toContain('vocabulary');
         });
 
         it('should return description for expert level', () => {
-            const desc = getLevelDescription('expert', 10);
+            const desc = getLevelDescription('expert');
             expect(desc).toContain('master');
             expect(desc).toContain('character types');
         });
 
         it('should return generic description for unknown type', () => {
-            const desc = getLevelDescription('unknown' as any, 5);
+            const desc = getLevelDescription('unknown' as any);
             expect(desc).toContain('complete this level');
         });
     });

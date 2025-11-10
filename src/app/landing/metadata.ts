@@ -65,7 +65,6 @@ export const landingMetadata: Metadata = {
 export const landingPageJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    aggregateRating: { '@type': 'AggregateRating', ratingCount: '1', ratingValue: '5' },
     applicationCategory: 'EducationalApplication',
     author: { '@type': 'Person', name: siteConfig.author.name, url: siteConfig.author.url },
     description: siteConfig.description,

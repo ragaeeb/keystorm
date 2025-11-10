@@ -87,7 +87,7 @@ export const saveLoginCode = async (email: string, codeHash: string, expiresAt: 
     const key = loginCodeKey(email);
 
     if (redisClient) {
-        await redisClient.set(key, JSON.stringify({ codeHash, expiresAt }), { ex: ttlSeconds });
+        await redisClient.set(key, { codeHash, expiresAt }, { ex: ttlSeconds });
         return;
     }
     setMemory(key, { codeHash, expiresAt }, ttlSeconds);

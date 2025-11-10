@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { type FormEvent, type RefObject, useEffect, useMemo } from 'react';
+import { type FormEvent, type RefObject, useCallback, useEffect, useMemo } from 'react';
 import ConfettiBoom from 'react-confetti-boom';
 import { KeyboardVisual } from '@/components/typing/KeyboardVisual';
 import { Button } from '@/components/ui/button';
@@ -45,26 +45,28 @@ export const PracticeView = ({
     stats,
     userInput,
 }: PracticeViewProps) => {
-    const levelDescription = useMemo(
-        () => getLevelDescription(activeLesson.type, activeLesson.level),
-        [activeLesson.type, activeLesson.level],
-    );
+    const levelDescription = getLevelDescription(activeLesson.type);
 
     const currentText = activeLesson.content[currentItemIndex];
     const totalItems = activeLesson.content.length;
+
+    const triggerSubmit = useCallback(() => {
+        const syntheticEvent = { preventDefault: () => {}, stopPropagation: () => {} } as FormEvent<HTMLFormElement>;
+        handleSubmit(syntheticEvent);
+    }, [handleSubmit]);
 
     useEffect(() => {
         if (levelComplete) {
             const handleEnter = (e: KeyboardEvent) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    handleSubmit({} as FormEvent<HTMLFormElement>);
+                    triggerSubmit();
                 }
             };
             window.addEventListener('keydown', handleEnter);
             return () => window.removeEventListener('keydown', handleEnter);
         }
-    }, [levelComplete, handleSubmit]);
+    }, [levelComplete, triggerSubmit]);
 
     return (
         <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
@@ -170,7 +172,7 @@ export const PracticeView = ({
                             <div className="flex flex-1 flex-col items-center justify-center gap-6">
                                 <h2 className="text-center font-semibold text-3xl text-gray-800">Level Complete!</h2>
                                 <p className="text-center text-gray-600">Great job! Ready for the next challenge?</p>
-                                <Button size="lg" onClick={() => handleSubmit({} as FormEvent<HTMLFormElement>)}>
+                                <Button size="lg" onClick={triggerSubmit}>
                                     {isLastLesson ? 'View Summary' : `Continue to Level ${activeLesson.level + 1}`}
                                 </Button>
                                 <p className="text-center text-gray-500 text-sm">

@@ -26,6 +26,11 @@ export const useAudioContext = () => {
         successAudioRef.current.preload = 'auto';
         containerRef.current.appendChild(successAudioRef.current);
 
+        confettiAudioRef.current = new Audio('/sfx/confetti.mp3');
+        confettiAudioRef.current.volume = 0.5;
+        confettiAudioRef.current.preload = 'auto';
+        containerRef.current.appendChild(confettiAudioRef.current);
+
         return () => {
             audioContextRef.current?.close();
             if (containerRef.current?.parentNode) {
@@ -58,7 +63,7 @@ export const useAudioContext = () => {
     }, []);
 
     const playErrorSound = useCallback(() => {
-        if (!errorAudioRef.current && containerRef.current && Number(1) !== 1) {
+        if (!errorAudioRef.current && containerRef.current) {
             errorAudioRef.current = new Audio('/sfx/error.mp3');
             errorAudioRef.current.volume = 0.3;
             errorAudioRef.current.preload = 'auto';
@@ -89,37 +94,19 @@ export const useAudioContext = () => {
     }, []);
 
     const playConfettiSound = useCallback(() => {
-        if (!confettiAudioRef.current && containerRef.current) {
-            confettiAudioRef.current = new Audio('/sfx/confetti.mp3');
-            confettiAudioRef.current.volume = 0.5;
-            confettiAudioRef.current.preload = 'auto';
-            containerRef.current.appendChild(confettiAudioRef.current);
-        }
-
         if (!confettiAudioRef.current) {
-            // Fallback to synthesized sound
-            if (!audioContextRef.current) {
-                return;
-            }
-            const ctx = audioContextRef.current;
-            [0, 0.1, 0.2].forEach((delay) => {
-                const o = ctx.createOscillator();
-                const g = ctx.createGain();
-                o.connect(g);
-                g.connect(ctx.destination);
-                o.frequency.value = 800 + delay * 400;
-                o.type = 'sine';
-                const startTime = ctx.currentTime + delay;
-                g.gain.setValueAtTime(0.15, startTime);
-                g.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
-                o.start(startTime);
-                o.stop(startTime + 0.3);
-            });
             return;
         }
 
-        confettiAudioRef.current.currentTime = 0;
-        confettiAudioRef.current.play().catch(() => {});
+        const audio = confettiAudioRef.current;
+        audio.currentTime = 0;
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                // Silently fail if user hasn't interacted yet or play is interrupted
+            });
+        }
     }, []);
 
     return { playConfettiSound, playErrorSound, playSuccessSound };

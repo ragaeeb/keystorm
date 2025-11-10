@@ -80,7 +80,7 @@ export const getLevelWithCache = async (level: number): Promise<Lesson> => {
 
 /**
  * Preload strategy: Load levels 1-4 immediately, prefetch 5-10 on demand
- * @returns Promise resolving to array of all 10 lessons
+ * @returns Promise resolving to array of early levels (1-4)
  */
 export const loadAllLevelsProgressive = async (): Promise<Lesson[]> => {
     // Load early levels immediately (required for startup)

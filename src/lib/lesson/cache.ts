@@ -10,6 +10,7 @@ const redis = hasRedisConfig ? new Redis({ token: redisToken!, url: redisUrl! })
 
 const CACHE_TTL = 60 * 60 * 24 * 3;
 const CACHE_VERSION = 'v1';
+const TOTAL_EARLY_LEVELS = 4;
 
 /**
  * Generates a stable hash for a theme string
@@ -48,7 +49,7 @@ export const getCachedLessons = async (theme: string): Promise<Lesson[] | null> 
             return null;
         }
 
-        if (!Array.isArray(cached) || cached.length !== 4) {
+        if (!Array.isArray(cached) || cached.length !== TOTAL_EARLY_LEVELS) {
             console.warn('Invalid cached lesson structure (expected 4 early levels), ignoring cache');
             return null;
         }
@@ -87,17 +88,13 @@ export const cacheLessons = async (theme: string, lessons: Lesson[]): Promise<vo
  * @returns True if cached, false otherwise
  */
 export const isCached = async (theme: string): Promise<boolean> => {
-    if (!redis) {
-        return false;
-    }
-
     try {
         const key = getCacheKey(theme);
-        const exists = await redis.exists(key);
+        const exists = redis ? await redis.exists(key) : 0;
         return exists === 1;
-    } catch (error) {
-        return false;
-    }
+    } catch {}
+
+    return false;
 };
 
 /**

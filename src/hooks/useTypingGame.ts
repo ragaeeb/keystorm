@@ -69,6 +69,7 @@ export const useTypingGame = (currentText: string, onError: () => void, onSucces
 
             // --- We'll use these to trigger side effects *after* the state update ---
             let isError = false;
+            let isSuccess = false;
 
             setTypingState((prev) => {
                 const prevLength = prev.userInput.length;
@@ -85,17 +86,17 @@ export const useTypingGame = (currentText: string, onError: () => void, onSucces
                     if (lastChar !== expectedChar) {
                         newState.errors = prev.errors + 1;
                         isError = true; // Mark that an error happened
-                        // onError() moved out
+                    } else {
+                        isSuccess = true;
                     }
                 }
 
-                return newState; // This function is now PURE
+                return newState;
             });
 
             if (isError) {
-                console.log('[handleInputChange] New char typed: ERROR');
                 onError();
-            } else {
+            } else if (isSuccess) {
                 onSuccess();
             }
 

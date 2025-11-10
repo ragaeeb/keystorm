@@ -1,6 +1,7 @@
 import { GeminiModel, generateWithGemini } from '@/lib/gemini';
 import { cacheLessons, getCachedLessons } from '@/lib/lesson/cache';
 import type { Lesson } from '@/types/lesson';
+import { MIN_CAPITALS, MIN_SENTENCES, MIN_WORDS, TOTAL_LETTERS } from '../constants';
 
 type EarlyLevelsContent = { letters: string[]; words: string[]; capitals: string[]; sentences: string[] };
 
@@ -46,51 +47,6 @@ sentences[15]:
 ...
 
 Only output TOON format. No markdown or explanations.`;
-};
-
-/**
- * Creates TOON-formatted prompt for advanced levels (5-10)
- * Called lazily when user reaches level 5
- */
-const createAdvancedLevelsPrompt = (theme: string): string => {
-    return `Generate typing practice content for advanced levels (5-10) based on theme: "${theme}".
-
-Respond in TOON format.
-
-Level Requirements:
-numbers[15]: Items mixing words and numbers
-mixed[12]: Sentences (60-100 chars) with mixed case and numbers
-punctuation[12]: Sentences (70-110 chars) with complex punctuation (:;""''()-)
-paragraphs[8]: Paragraphs (150-250 chars) with alliterations
-advanced[6]: Long paragraphs (250-400 chars) with advanced vocabulary
-expert[5]: Expert paragraphs (400-600 chars) with all character types
-
-TOON format:
-numbers[15]:
-<5 pillars>
-...
-
-mixed[12]:
-<Mixed sentence with 7 numbers.>
-...
-
-punctuation[12]:
-<Complex: sentence; with (various) punctuation!>
-...
-
-paragraphs[8]:
-<Paragraph one...>
-...
-
-advanced[6]:
-<Advanced paragraph...>
-...
-
-expert[5]:
-<Expert paragraph...>
-...
-
-Only output TOON format. No markdown.`;
 };
 
 /**
@@ -168,15 +124,17 @@ const parseAdvancedLevelsToon = (toonText: string): AdvancedLevelsContent => {
 
 /**
  * Validates early levels response
+ * Note: Validation is intentionally more lenient than prompt specifications
+ * to allow flexibility in AI-generated content while ensuring minimum quality
  */
 const validateEarlyLevels = (text: string): boolean => {
     try {
         const parsed = parseEarlyLevelsToon(text);
         return (
-            parsed.letters.length === 26 &&
-            parsed.words.length >= 15 &&
-            parsed.capitals.length >= 15 &&
-            parsed.sentences.length >= 10
+            parsed.letters.length === TOTAL_LETTERS &&
+            parsed.words.length >= MIN_WORDS &&
+            parsed.capitals.length >= MIN_CAPITALS &&
+            parsed.sentences.length >= MIN_SENTENCES
         );
     } catch {
         return false;
@@ -251,56 +209,4 @@ export const generateLessons = async (theme: string): Promise<Lesson[]> => {
 
     console.log('[generateLessons] Early levels generated successfully');
     return earlyLessons;
-};
-
-/**
- * Generates advanced lessons (5-10) on-demand
- * Only called when user reaches level 5 or later
- * NOT used in current implementation - advanced levels come from JSON files
- *
- * @param theme - Educational theme
- * @returns Array of advanced lessons (5-10)
- * @deprecated Use lazy loading from JSON files instead
- */
-export const generateAdvancedLessons = async (theme: string): Promise<Lesson[]> => {
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-        throw new Error('GEMINI_API_KEY not configured');
-    }
-
-    // Check cache first
-    const cacheKey = `advanced:${theme}`;
-    const cached = await getCachedLessons(cacheKey);
-    if (cached) {
-        console.log('[generateAdvancedLessons] Cache hit for advanced levels');
-        return cached;
-    }
-
-    console.log('[generateAdvancedLessons] Generating advanced levels (5-10) for theme:', theme);
-
-    const advancedPrompt = createAdvancedLevelsPrompt(theme);
-    const advancedResponse = await generateWithGemini(
-        advancedPrompt,
-        apiKey,
-        validateAdvancedLevels,
-        GeminiModel.FlashLiteV2_5,
-        { maxRetries: 3, timeout: 90000 },
-    );
-
-    const advancedContent = parseAdvancedLevelsToon(advancedResponse);
-
-    const advancedLessons: Lesson[] = [
-        { content: advancedContent.numbers, level: 5, type: 'numbers' },
-        { content: advancedContent.mixed, level: 6, type: 'mixed' },
-        { content: advancedContent.punctuation, level: 7, type: 'punctuation' },
-        { content: advancedContent.paragraphs, level: 8, type: 'paragraphs' },
-        { content: advancedContent.advanced, level: 9, type: 'advanced' },
-        { content: advancedContent.expert, level: 10, type: 'expert' },
-    ];
-
-    await cacheLessons(cacheKey, advancedLessons);
-
-    console.log('[generateAdvancedLessons] Advanced levels generated successfully');
-    return advancedLessons;
 };

@@ -13,7 +13,7 @@ function GradientProgress({ className, value, ...props }: React.ComponentProps<t
         >
             <ProgressPrimitive.Indicator
                 data-slot="progress-indicator"
-                className="h-full w-full flex-1 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-600 transition-all"
+                className="h-full w-full flex-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 transition-all"
                 style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
             />
         </ProgressPrimitive.Root>

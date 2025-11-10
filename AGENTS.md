@@ -17,7 +17,7 @@ KeyStorm is a modern, AI-powered touch typing tutor built with Next.js 15, React
 
 ### Core Concepts
 
-#### Learning Progression (10 Levels)
+#### Learning Progression
 1. **Landing** (`/landing`) - Authentication or guest mode
 2. **Start** (`/start`) - Name/theme selection
 3. **Learn** (`/learn`) - Keyboard positioning guide
@@ -98,7 +98,7 @@ type Lesson = {
 - **localStorage**: User name, theme preferences (persistent)
 - **sessionStorage**: Current lessons, progress state, completion flags (per-session)
 - **Redis**: Login codes (10min TTL, rate-limited)
-- **public/defaultLessons.json**: Externalized default lesson data
+- **public/lessons/*.json**: Externalized lesson data per level (1.json through 10.json)
 
 ## Development Patterns
 
@@ -175,7 +175,7 @@ Benefits:
 - TOON format automatically reduces token usage by 30-60%
 
 ### Updating Default Lessons
-- Edit `public/defaultLessons.json` directly (no code changes needed)
+- Edit individual level files in `public/lessons/*.json` (1.json through 10.json)
 - Validate JSON structure matches Lesson[] type
 - Redeploy to apply changes
 

@@ -11,9 +11,5 @@ describe('generator', () => {
 
             process.env.GEMINI_API_KEY = originalKey;
         });
-
-        it('should validate theme is passed to prompt', () => {
-            expect(true).toBe(true);
-        });
     });
 });

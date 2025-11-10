@@ -24,11 +24,11 @@ const createMockRedis = () => {
          * @param key - Key to delete
          * @returns Number of keys deleted (0 or 1)
          */
-        del: mock(async (key: string) => {
+        del: async (key: string) => {
             const deleted = store.has(key);
             store.delete(key);
             return deleted ? 1 : 0;
-        }),
+        },
 
         /**
          * Gets a value from the store
@@ -36,7 +36,7 @@ const createMockRedis = () => {
          * @param key - Key to retrieve
          * @returns Stored value or null if not found/expired
          */
-        get: mock(async <T>(key: string): Promise<T | null> => {
+        get: async <T>(key: string): Promise<T | null> => {
             const entry = store.get(key);
             if (!entry) {
                 return null;
@@ -52,7 +52,7 @@ const createMockRedis = () => {
             } catch {
                 return entry.value as T;
             }
-        }),
+        },
 
         /**
          * Sets a value with optional expiration
@@ -61,12 +61,12 @@ const createMockRedis = () => {
          * @param options - Optional expiration in seconds
          * @returns 'OK' on success
          */
-        set: mock(async (key: string, value: any, options?: { ex?: number }) => {
+        set: async (key: string, value: any, options?: { ex?: number }) => {
             const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
             const expireAt = options?.ex ? Date.now() + options.ex * 1000 : undefined;
             store.set(key, { expireAt, value: stringValue });
             return 'OK';
-        }),
+        },
     };
 };
 
@@ -146,9 +146,6 @@ describe('redis', () => {
 
             expect(code1?.codeHash).toBe('hash1');
             expect(code2?.codeHash).toBe('hash2');
-
-            await deleteLoginCode(email1);
-            await deleteLoginCode(email2);
         });
     });
 

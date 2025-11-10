@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
             { hostname: 'upload.wikimedia.org', pathname: '/wikipedia/commons/thumb/**', protocol: 'https' },
         ],
     },
-    reactStrictMode: false,
 };
 
 export default nextConfig;

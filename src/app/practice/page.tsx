@@ -5,6 +5,7 @@ import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { PracticeView } from '@/components/practice/practice-view';
 import { Card } from '@/components/ui/card';
 import { useAudioContext } from '@/hooks/useAudioContext';
+import { useDebugSkip } from '@/hooks/useDebugSkip';
 import { useGameStats } from '@/hooks/useGameStats';
 import { useLevelProgression } from '@/hooks/useLevelProgression';
 import { usePersistPracticeSummary } from '@/hooks/usePersistPracticeSummary';
@@ -23,33 +24,6 @@ const useStartGameOnEnter = (gameState: 'ready' | 'playing' | 'finished', startG
         window.addEventListener('keydown', handleKeyStart);
         return () => window.removeEventListener('keydown', handleKeyStart);
     }, [gameState, startGame]);
-};
-
-const useDebugMode = (
-    totalItems: number,
-    setCurrentItemIndex: React.Dispatch<React.SetStateAction<number>>,
-    inputRef: React.RefObject<HTMLInputElement | null>,
-) => {
-    useEffect(() => {
-        const handleDebugKey = (event: KeyboardEvent) => {
-            if (event.ctrlKey && event.shiftKey && event.key === 'D') {
-                event.preventDefault();
-                const isDev = process.env.NODE_ENV === 'development';
-                const hasDebugParam = typeof window !== 'undefined' && window.location.search.includes('debug=true');
-
-                if (isDev || hasDebugParam) {
-                    console.log('[Debug] Skipping to last item in level');
-                    setCurrentItemIndex(Math.max(0, totalItems - 1));
-                    setTimeout(() => {
-                        inputRef.current?.focus();
-                        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 100);
-                }
-            }
-        };
-        window.addEventListener('keydown', handleDebugKey);
-        return () => window.removeEventListener('keydown', handleDebugKey);
-    }, [totalItems, setCurrentItemIndex, inputRef]);
 };
 
 export default function PracticePage() {
@@ -84,7 +58,12 @@ export default function PracticePage() {
 
     usePersistPracticeSummary(mounted, completedLevels);
     useStartGameOnEnter(gameState, startGame);
-    useDebugMode(activeLesson?.content.length ?? 0, setCurrentItemIndex, inputRef);
+
+    useDebugSkip(
+        activeLesson?.content.length ?? 0,
+        (totalItems) => setCurrentItemIndex(Math.max(0, totalItems - 1)),
+        inputRef,
+    );
 
     const stats = useGameStats(typingState, activeLesson?.content[currentItemIndex] ?? '');
 
