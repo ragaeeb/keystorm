@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef } from 'react';
 
 export const useAudioContext = () => {
     const successAudioRef = useRef<HTMLAudioElement | null>(null);
-    const errorAudioRef = useRef<HTMLAudioElement | null>(null);
     const confettiAudioRef = useRef<HTMLAudioElement | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -39,7 +38,6 @@ export const useAudioContext = () => {
 
             // Add these lines to prevent stale ref access on unmount
             successAudioRef.current = null;
-            errorAudioRef.current = null;
             confettiAudioRef.current = null;
             containerRef.current = null;
             audioContextRef.current = null;
@@ -63,34 +61,21 @@ export const useAudioContext = () => {
     }, []);
 
     const playErrorSound = useCallback(() => {
-        if (!errorAudioRef.current && containerRef.current) {
-            errorAudioRef.current = new Audio('/sfx/error.mp3');
-            errorAudioRef.current.volume = 0.3;
-            errorAudioRef.current.preload = 'auto';
-            containerRef.current.appendChild(errorAudioRef.current);
-        }
-
-        if (!errorAudioRef.current) {
-            // Fallback to synthesized sound
-            if (!audioContextRef.current) {
-                return;
-            }
-            const ctx = audioContextRef.current;
-            const o = ctx.createOscillator();
-            const g = ctx.createGain();
-            o.connect(g);
-            g.connect(ctx.destination);
-            o.frequency.value = 200;
-            o.type = 'sine';
-            g.gain.setValueAtTime(0.3, ctx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-            o.start(ctx.currentTime);
-            o.stop(ctx.currentTime + 0.1);
+        // Always use synthesized sound
+        if (!audioContextRef.current) {
             return;
         }
-
-        errorAudioRef.current.currentTime = 0;
-        errorAudioRef.current.play().catch(() => {});
+        const ctx = audioContextRef.current;
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.frequency.value = 200;
+        o.type = 'sine';
+        g.gain.setValueAtTime(0.3, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        o.start(ctx.currentTime);
+        o.stop(ctx.currentTime + 0.1);
     }, []);
 
     const playConfettiSound = useCallback(() => {

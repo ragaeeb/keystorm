@@ -8,7 +8,6 @@ type LevelProgressParams = {
     currentItemIndex: number;
     gameState: 'ready' | 'playing' | 'finished';
     levelProgressRef: RefObject<{ totalAccuracy: number; totalErrors: number; totalWpm: number; items: number } | null>;
-    playConfettiSound: () => void;
     resetGame: () => void;
     router: { push: (path: string) => void };
     setCompletedLevels: React.Dispatch<React.SetStateAction<LevelSummary[]>>;
@@ -24,7 +23,6 @@ export const useLevelProgression = ({
     currentItemIndex,
     gameState,
     levelProgressRef,
-    playConfettiSound,
     resetGame,
     router,
     setCompletedLevels,
@@ -76,7 +74,6 @@ export const useLevelProgression = ({
             levelProgressRef.current = null;
             setLevelComplete(true);
             setShowConfetti(true);
-            playConfettiSound();
 
             const tutorialRoute = getNextLevelRoute(activeLesson.type);
             if (tutorialRoute && tutorialRoute.startsWith('/learn/')) {
@@ -101,7 +98,6 @@ export const useLevelProgression = ({
         currentItemIndex,
         gameState,
         levelProgressRef,
-        playConfettiSound,
         resetGame,
         router,
         setCompletedLevels,

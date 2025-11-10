@@ -50,10 +50,14 @@ export default function PracticePage() {
 
     const { playErrorSound, playSuccessSound, playConfettiSound } = useAudioContext();
 
+    // Check if this is the last item of the current level
+    const isLastItemOfLevel = activeLesson && currentItemIndex === activeLesson.content.length - 1;
+
     const { typingState, gameState, inputRef, startGame, handleInputChange, resetGame } = useTypingGame(
         activeLesson?.content[currentItemIndex] ?? '',
         playErrorSound,
         playSuccessSound,
+        isLastItemOfLevel ? playConfettiSound : undefined, // <-- Use undefined
     );
 
     usePersistPracticeSummary(mounted, completedLevels);
@@ -72,7 +76,6 @@ export default function PracticePage() {
         currentItemIndex,
         gameState,
         levelProgressRef,
-        playConfettiSound,
         resetGame,
         router,
         setCompletedLevels,

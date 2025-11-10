@@ -25,10 +25,14 @@ export default function LetterPracticePage() {
 
     const currentLetter = letters[currentIndex] ?? '';
 
+    // Check if this is the last letter
+    const isLastLetter = mounted && letters.length > 0 && currentIndex === letters.length - 1;
+
     const { typingState, gameState, inputRef, startGame, handleInputChange, resetGame } = useTypingGame(
         currentLetter,
         playErrorSound,
         playSuccessSound,
+        isLastLetter ? playConfettiSound : undefined, // <-- Use undefined
     );
 
     useEffect(() => {
@@ -107,7 +111,6 @@ export default function LetterPracticePage() {
                 setCurrentIndex((prev) => prev + 1);
             } else {
                 setShowConfetti(true);
-                playConfettiSound();
                 setTimeout(() => {
                     sessionStorage.setItem('lettersCompleted', 'true');
                     router.push('/practice');
@@ -116,7 +119,7 @@ export default function LetterPracticePage() {
         }, 250);
 
         return () => clearTimeout(timeout);
-    }, [currentIndex, gameState, letters.length, playConfettiSound, router]);
+    }, [currentIndex, gameState, letters.length, router]);
 
     const handleSkip = useCallback(() => {
         sessionStorage.setItem('lettersCompleted', 'true');

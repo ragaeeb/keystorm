@@ -97,7 +97,7 @@ type Lesson = {
 ### Storage Strategy
 - **localStorage**: User name, theme preferences (persistent)
 - **sessionStorage**: Current lessons, progress state, completion flags (per-session)
-- **Redis**: Login codes (10min TTL, rate-limited)
+- **Redis**: Login codes (10-min TTL, rate-limited)
 - **public/lessons/*.json**: Externalized lesson data per level (1.json through 10.json)
 
 ## Development Patterns
@@ -105,7 +105,7 @@ type Lesson = {
 ### TOON Format for AI Prompts
 KeyStorm uses TOON (Token-Oriented Object Notation) for Gemini API requests, achieving 30-60% token reduction compared to JSON:
 
-```
+```toon
 letters[26]:
 a
 s
@@ -262,7 +262,7 @@ Ensure `public/defaultLessons.json` is included in deployment.
 - **Lower costs** on token-based pricing
 
 ### TOON Syntax
-```
+```toon
 # Arrays with length markers
 items[3]:
 value1

@@ -26,10 +26,14 @@ export default function CapitalsPracticePage() {
     const currentWord = words[currentIndex] ?? '';
     const nextWord = words[currentIndex + 1] ?? '';
 
+    // Check if this is the last word
+    const isLastWord = mounted && words.length > 0 && currentIndex === words.length - 1;
+
     const { typingState, gameState, inputRef, startGame, handleInputChange, resetGame } = useTypingGame(
         currentWord,
         playErrorSound,
         playSuccessSound,
+        isLastWord ? playConfettiSound : undefined, // <-- Use undefined
     );
 
     useEffect(() => {
@@ -94,7 +98,6 @@ export default function CapitalsPracticePage() {
                 setCurrentIndex((prev) => prev + 1);
             } else {
                 setShowConfetti(true);
-                playConfettiSound();
                 setTimeout(() => {
                     sessionStorage.setItem('capitalsCompleted', 'true');
                     router.push('/practice');
@@ -103,7 +106,7 @@ export default function CapitalsPracticePage() {
         }, 250);
 
         return () => clearTimeout(timeout);
-    }, [currentIndex, gameState, words.length, playConfettiSound, router]);
+    }, [currentIndex, gameState, words.length, router]);
 
     useEffect(() => {
         const handleDebugKey = (e: KeyboardEvent) => {
