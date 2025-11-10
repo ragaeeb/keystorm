@@ -2,6 +2,22 @@ import { useMemo } from 'react';
 import type { GameStats } from '@/lib/stats';
 import type { TypingState } from './useTypingGame';
 
+/**
+ * Custom hook for calculating real-time typing game statistics
+ *
+ * Computes WPM, accuracy, and tracks errors based on user input and elapsed time.
+ * Accuracy calculation includes penalty for backspace usage to discourage corrections.
+ *
+ * @param state - Current typing state from useTypingGame
+ * @param targetText - The text the user is attempting to type
+ * @returns Game statistics object with wpm, accuracy, and errors
+ *
+ * @example
+ * ```tsx
+ * const stats = useGameStats(typingState, "Hello world");
+ * console.log(`WPM: ${stats.wpm}, Accuracy: ${stats.accuracy}%`);
+ * ```
+ */
 export const useGameStats = (state: TypingState, targetText: string): GameStats => {
     return useMemo(() => {
         const { userInput, startTime, errors, backspaceCount } = state;

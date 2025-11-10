@@ -11,7 +11,25 @@ type UseTypingGameReturn = {
     resetGame: () => void;
 };
 
-export const useTypingGame = (currentText: string, onError: () => void): UseTypingGameReturn => {
+/**
+ * Custom hook for managing typing game state and logic
+ *
+ * ... (omitted doc comments for brevity) ...
+ *
+ * @param currentText - The target text user should type
+ * @param onError - Callback fired when user makes a typing error
+ * @param onSuccess - Optional callback fired on each correct keystroke
+ * @param playConfettiSound - Optional callback fired on final correct keystroke
+ * @returns Object containing game state, input ref, and control functions
+ *
+ * ... (omitted example for brevity) ...
+ */
+export const useTypingGame = (
+    currentText: string,
+    onError: () => void,
+    onSuccess: () => void,
+    playConfettiSound?: () => void, // Stays optional
+): UseTypingGameReturn => {
     const [gameState, setGameState] = useState<'ready' | 'playing' | 'finished'>('ready');
     const [typingState, setTypingState] = useState<TypingState>({
         backspaceCount: 0,
@@ -36,9 +54,14 @@ export const useTypingGame = (currentText: string, onError: () => void): UseTypi
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const value = e.target.value;
-            const prevLength = typingState.userInput.length;
+            const isFinished = value === currentText;
+
+            // --- We'll use these to trigger side effects *after* the state update ---
+            let isError = false;
+            let isSuccess = false;
 
             setTypingState((prev) => {
+                const prevLength = prev.userInput.length;
                 const newState = { ...prev, userInput: value };
 
                 if (value.length < prevLength) {
@@ -48,20 +71,37 @@ export const useTypingGame = (currentText: string, onError: () => void): UseTypi
                 if (value.length > prevLength) {
                     const lastChar = value[value.length - 1];
                     const expectedChar = currentText[value.length - 1];
+
                     if (lastChar !== expectedChar) {
                         newState.errors = prev.errors + 1;
-                        onError();
+                        isError = true; // Mark that an error happened
+                    } else {
+                        isSuccess = true;
                     }
                 }
 
                 return newState;
             });
 
-            if (value === currentText) {
+            if (isError) {
+                onError();
+            } else if (isSuccess) {
+                if (isFinished && playConfettiSound) {
+                    // If this is the last item (confetti fn is provided)
+                    // and it's finished, only play confetti.
+                    playConfettiSound();
+                } else {
+                    // Otherwise (not finished, OR finished but not last item),
+                    // play the normal success sound.
+                    onSuccess();
+                }
+            }
+
+            if (isFinished) {
                 setGameState('finished');
             }
         },
-        [typingState.userInput.length, currentText, onError],
+        [currentText, onError, onSuccess, playConfettiSound],
     );
 
     return { gameState, handleInputChange, inputRef, resetGame, startGame, typingState };

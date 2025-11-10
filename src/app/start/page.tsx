@@ -3,39 +3,54 @@
 import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DEFAULT_ISLAMIC_LESSONS } from '@/lib/default-lessons';
+import { loadEarlyLevels } from '@/lib/lesson/lazy';
 import { isThemeAllowed } from '@/lib/theme-validation';
+import { useLessonStore } from '@/store/useLessonStore';
+import { useUserStore } from '@/store/useUserStore';
 import type { Lesson } from '@/types/lesson';
-
-const storeLessons = (lessons: ReadonlyArray<Lesson>) => {
-    sessionStorage.setItem('lessons', JSON.stringify(lessons));
-    sessionStorage.setItem('lettersCompleted', 'false');
-};
 
 export default function StartPage() {
     const router = useRouter();
     const { data: session } = useSession();
-    const [name, setName] = useState('');
-    const [theme, setTheme] = useState('Islam');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const isAuthenticated = useMemo(() => Boolean(session?.user), [session?.user]);
+    const name = useUserStore((state) => state.name);
+    const theme = useUserStore((state) => state.theme);
+    const setName = useUserStore((state) => state.setName);
+    const setTheme = useUserStore((state) => state.setTheme);
 
-    const handleDefaultStart = useCallback(() => {
-        storeLessons(DEFAULT_ISLAMIC_LESSONS);
-        if (name.trim()) {
-            sessionStorage.setItem('userName', name.trim());
-        } else {
-            sessionStorage.removeItem('userName');
+    const setLessons = useLessonStore((state) => state.setLessons);
+    const resetProgress = useLessonStore((state) => state.resetProgress);
+    const hasEarlyLessons = useLessonStore((state) => state.hasEarlyLessons);
+
+    const isAuthenticated = Boolean(session?.user);
+
+    const handleDefaultStart = useCallback(async () => {
+        resetProgress();
+
+        if (!hasEarlyLessons) {
+            setLoading(true);
+            try {
+                console.log('[StartPage] Loading default early lessons (1-4) from JSON');
+                const earlyLessons = await loadEarlyLevels();
+                setLessons(earlyLessons);
+            } catch (err) {
+                console.error('Failed to load default lessons:', err);
+                setError('Failed to load lessons. Please try again.');
+                setLoading(false);
+                return;
+            }
+            setLoading(false);
         }
-        router.push('/practice/letters');
-    }, [name, router]);
+
+        router.push('/learn');
+    }, [router, resetProgress, setLessons, hasEarlyLessons]);
 
     const handleSubmit = useCallback(async () => {
         if (!isAuthenticated) {
@@ -57,6 +72,7 @@ export default function StartPage() {
         setError(null);
 
         try {
+            console.log('[StartPage] Requesting AI-generated early lessons (1-4) for theme:', theme);
             const response = await fetch('/api/generate-lessons', {
                 body: JSON.stringify({ theme: theme.trim() }),
                 headers: { 'Content-Type': 'application/json' },
@@ -74,22 +90,18 @@ export default function StartPage() {
                 throw new Error('Invalid response format from API');
             }
 
-            storeLessons(data.lessons as Lesson[]);
-            if (name.trim()) {
-                sessionStorage.setItem('userName', name.trim());
-            } else {
-                sessionStorage.removeItem('userName');
-            }
-            sessionStorage.setItem('theme', theme.trim());
+            console.log('[StartPage] Received AI early lessons (1-4), storing in Zustand');
+            setLessons(data.lessons as Lesson[]);
+            console.log('[StartPage] Levels 5-10 will be lazily loaded from JSON as user progresses');
 
-            router.push('/practice/letters');
+            router.push('/learn');
         } catch (err) {
             console.error('Error generating lessons:', err);
             setError(err instanceof Error ? err.message : 'Failed to generate lessons. Please try again.');
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, name, router, theme]);
+    }, [isAuthenticated, theme, setLessons, router]);
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
@@ -104,7 +116,7 @@ export default function StartPage() {
                         <CardDescription>
                             {isAuthenticated
                                 ? 'Pick a theme to generate fresh lessons tailored just for you.'
-                                : 'Use our curated Islamic lessons or sign in to create personalized themes.'}
+                                : 'Use our curated lessons or sign in to create personalized themes.'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5">
@@ -134,7 +146,7 @@ export default function StartPage() {
                             <p className="text-gray-500 text-xs">
                                 {isAuthenticated
                                     ? 'We will validate your theme to keep the content family-friendly.'
-                                    : 'Sign in to unlock custom themes. Guest mode uses our Islamic starter set.'}
+                                    : 'Sign in to unlock custom themes. Default lessons load from our library.'}
                             </p>
                         </div>
 
@@ -146,12 +158,21 @@ export default function StartPage() {
                                 className="w-full bg-gradient-to-r from-indigo-600 to-purple-600"
                                 disabled={!isAuthenticated || loading || !theme.trim()}
                             >
-                                {loading ? 'Generating lessons…' : 'Generate personalized lessons'}
+                                {loading ? 'Generating early lessons…' : 'Generate personalized lessons (Levels 1-4)'}
                             </Button>
-                            <Button onClick={handleDefaultStart} variant="outline" className="w-full">
-                                Use default Islamic lessons
+                            <Button
+                                onClick={handleDefaultStart}
+                                variant="outline"
+                                className="w-full"
+                                disabled={loading}
+                            >
+                                {loading ? 'Loading lessons…' : 'Use default lessons'}
                             </Button>
                         </div>
+
+                        <p className="text-center text-gray-500 text-xs">
+                            Levels 5-10 will load automatically as you progress
+                        </p>
                     </CardContent>
                 </Card>
             </motion.div>

@@ -7,48 +7,52 @@ import ConfettiBoom from 'react-confetti-boom';
 import { KeyboardVisual } from '@/components/typing/KeyboardVisual';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { GradientProgress } from '@/components/ui/gradient-progress';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import { useAudioContext } from '@/hooks/useAudioContext';
+import { useDebugSkip } from '@/hooks/useDebugSkip';
 import { useTypingGame } from '@/hooks/useTypingGame';
-import { DEFAULT_ISLAMIC_LESSONS } from '@/lib/default-lessons';
-import type { Lesson } from '@/types/lesson';
-
-const LETTER_LESSON = DEFAULT_ISLAMIC_LESSONS.find((lesson) => lesson.type === 'letters');
+import { getNextLevelRoute } from '@/lib/lesson/descriptions';
+import { useLessonStore } from '@/store/useLessonStore';
 
 export default function LetterPracticePage() {
     const router = useRouter();
-    const { playErrorSound } = useAudioContext();
-    const [letters, setLetters] = useState<string[]>(LETTER_LESSON?.content ?? []);
+    const { playErrorSound, playSuccessSound, playConfettiSound } = useAudioContext();
+    const [letters, setLetters] = useState<string[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [mounted, setMounted] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
 
+    const loadLevel = useLessonStore((state) => state.loadLevel);
+    const getLesson = useLessonStore((state) => state.getLesson);
+    const isLoading = useLessonStore((state) => state.isLoading);
+    const setCompletionFlag = useLessonStore((state) => state.setCompletionFlag);
+
     const currentLetter = letters[currentIndex] ?? '';
+    const isLastLetter = mounted && letters.length > 0 && currentIndex === letters.length - 1;
 
     const { typingState, gameState, inputRef, startGame, handleInputChange, resetGame } = useTypingGame(
         currentLetter,
         playErrorSound,
+        playSuccessSound,
+        isLastLetter ? playConfettiSound : undefined,
     );
 
     useEffect(() => {
-        const storedLessons = sessionStorage.getItem('lessons');
-        if (storedLessons) {
-            try {
-                const parsed: Lesson[] = JSON.parse(storedLessons);
-                const letterLesson = parsed.find((lesson) => lesson.type === 'letters');
-                if (letterLesson) {
-                    setLetters(letterLesson.content);
-                }
-            } catch (error) {
-                console.warn('Failed to parse stored lessons for letters', error);
+        const loadLetters = async () => {
+            const letterLesson = getLesson(1) || (await loadLevel(1));
+
+            if (letterLesson) {
+                setLetters(letterLesson.content);
             }
-        }
-        setMounted(true);
-    }, []);
+            setMounted(true);
+        };
+
+        loadLetters();
+    }, [loadLevel, getLesson]);
 
     useEffect(() => {
-        if (!mounted || !currentLetter) {
+        if (!mounted || !currentLetter || isLoading) {
             return;
         }
         resetGame();
@@ -58,7 +62,7 @@ export default function LetterPracticePage() {
             el?.focus();
             el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
-    }, [currentLetter, inputRef, mounted, resetGame, startGame]);
+    }, [currentLetter, inputRef, mounted, isLoading, resetGame, startGame]);
 
     const progress = useMemo(() => {
         if (letters.length === 0) {
@@ -90,36 +94,59 @@ export default function LetterPracticePage() {
             return;
         }
 
-        // Show confetti for perfect letter completion (no errors)
-        if (typingState.errors === 0) {
-            setShowConfetti(true);
-            setTimeout(() => setShowConfetti(false), 2000);
-        }
-
         const timeout = setTimeout(() => {
             if (currentIndex < letters.length - 1) {
                 setCurrentIndex((prev) => prev + 1);
             } else {
-                sessionStorage.setItem('lettersCompleted', 'true');
-                router.push('/practice');
+                setShowConfetti(true);
+                setTimeout(() => {
+                    setCompletionFlag('lettersCompleted', true);
+                    const nextRoute = getNextLevelRoute(1, 'letters');
+                    console.log('letters/page::getNextLevelRoute', nextRoute);
+                    router.push(nextRoute);
+                }, 2500);
             }
         }, 250);
 
         return () => clearTimeout(timeout);
-    }, [currentIndex, gameState, letters.length, router, typingState.errors]);
+    }, [currentIndex, gameState, letters.length, router, setCompletionFlag]);
 
     const handleSkip = useCallback(() => {
-        sessionStorage.setItem('lettersCompleted', 'true');
+        setCompletionFlag('lettersCompleted', true);
         router.push('/practice');
-    }, [router]);
+    }, [router, setCompletionFlag]);
+
+    const handleSkipToNextLevel = useCallback(() => {
+        setCompletionFlag('lettersCompleted', true);
+        const nextRoute = getNextLevelRoute(1, 'letters');
+        router.push(nextRoute);
+    }, [setCompletionFlag, router]);
+
+    useDebugSkip({
+        inputRef,
+        onSkipToLast: (total) => setCurrentIndex(Math.max(0, total - 1)),
+        onSkipToNext: () => setCurrentIndex((prev) => Math.min(prev + 1, letters.length - 1)),
+        onSkipToNextLevel: handleSkipToNextLevel,
+        totalItems: letters.length,
+    });
+
+    if (isLoading || !mounted) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+                <Card className="p-8">
+                    <p className="text-center text-gray-600">Loading lesson...</p>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
             {showConfetti && (
                 <ConfettiBoom
-                    particleCount={50}
-                    effectCount={2}
-                    effectInterval={300}
+                    particleCount={100}
+                    effectCount={3}
+                    effectInterval={400}
                     colors={['#8BC34A', '#FF5252', '#FFB74D', '#4DD0E1', '#81C784', '#EC407A', '#AB47BC', '#5C6BC0']}
                 />
             )}
@@ -128,20 +155,20 @@ export default function LetterPracticePage() {
                     <CardHeader className="border-b bg-white/90 py-4 backdrop-blur">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <CardTitle className="text-lg">Letter Practice</CardTitle>
+                                <CardTitle className="text-lg">Letter Practice - Level 1</CardTitle>
                                 <CardDescription>
-                                    Type the highlighted letter. We will advance automatically when you get it right.
+                                    Type each letter as it appears. We'll advance automatically when correct.
                                 </CardDescription>
                             </div>
                             <div className="flex items-center gap-3">
-                                <Progress value={progress} className="w-40" />
+                                <GradientProgress value={progress} className="w-40" />
                                 <span className="text-gray-600 text-sm">{progress}%</span>
                             </div>
                         </div>
                     </CardHeader>
 
                     <CardContent className="flex flex-1 flex-col gap-6 py-6">
-                        <div className="flex flex-1 flex-col items-center justify-center gap-6 md:flex-row md:items-stretch">
+                        <div className="flex flex-1 flex-col items-center justify-center gap-8">
                             <motion.div
                                 key={currentLetter}
                                 initial={{ opacity: 0, scale: 0.95 }}
@@ -155,19 +182,21 @@ export default function LetterPracticePage() {
                                 <div className="w-full max-w-2xl">
                                     <KeyboardVisual activeKey={nextChar} />
                                 </div>
-                                <Input
-                                    ref={inputRef}
-                                    value={typingState.userInput}
-                                    onChange={handleLetterChange}
-                                    autoComplete="off"
-                                    autoCorrect="off"
-                                    autoCapitalize="off"
-                                    spellCheck={false}
-                                    className="w-40 rounded-full border-2 border-indigo-200 text-center font-semibold text-2xl"
-                                />
-                                <p className="text-gray-500 text-sm">
-                                    Mistyped letters will stay on screen so you can try again.
-                                </p>
+                                <div className="flex flex-col items-center gap-3">
+                                    <Input
+                                        ref={inputRef}
+                                        value={typingState.userInput}
+                                        onChange={handleLetterChange}
+                                        autoComplete="off"
+                                        autoCorrect="off"
+                                        autoCapitalize="off"
+                                        spellCheck={false}
+                                        className="w-40 rounded-full border-2 border-indigo-200 text-center font-semibold text-2xl"
+                                    />
+                                    <p className="text-center text-gray-500 text-sm">
+                                        Mistyped letters will stay on screen so you can try again.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 

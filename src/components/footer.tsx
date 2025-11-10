@@ -6,7 +6,7 @@ const versionUrl = `${homepage}/releases/tag/v${version}`;
 
 export const Footer = () => {
     return (
-        <footer className="py-6">
+        <footer className="border-t bg-white/80 py-6 backdrop-blur">
             <div className="flex items-center justify-center gap-4 text-muted-foreground text-sm">
                 <p>
                     © {new Date().getFullYear()} {author}. All Rights Reserved.{' '}

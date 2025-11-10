@@ -1,9 +1,35 @@
+export const DEFAULT_BLOCKED_WORDS = [
+    'sex',
+    'sexual',
+    'violence',
+    'violent',
+    'murder',
+    'kill',
+    'killing',
+    'weapon',
+    'porn',
+    'terror',
+    'drug',
+    'abuse',
+    'terrorist',
+    'extremism',
+    'drugs',
+    'gambling',
+    'alcohol',
+    'hate',
+];
+
 export const KEYBOARD_ROWS = [
     ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='],
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
     ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'"],
     ['Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/'],
 ];
+
+export const MIN_WORDS = 15; // Prompt requests 20
+export const MIN_CAPITALS = 15; // Prompt requests 20
+export const MIN_SENTENCES = 10;
+export const TOTAL_LETTERS = 26;
 
 export type FingerPosition = { finger: string; keys: string[]; color: string };
 

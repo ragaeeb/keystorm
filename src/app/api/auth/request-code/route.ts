@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomInt } from 'node:crypto';
 import { Redis } from '@upstash/redis';
 import { type NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
@@ -6,20 +6,39 @@ import { z } from 'zod';
 import { deleteLoginCode, saveLoginCode } from '@/lib/redis';
 
 const redis = Redis.fromEnv();
-const REQUEST_WINDOW = 10 * 60; // 10 minutes
+
+/** 10 minute rate limit window expressed in seconds. */
+const REQUEST_WINDOW = 10 * 60;
+
+/** Maximum number of allowed requests per window for a single email. */
 const MAX_REQUESTS = 3;
 
 const requestSchema = z.object({ email: z.email() });
 
-import { randomInt } from 'node:crypto';
+/**
+ * Generates a random 6-digit one-time code.
+ *
+ * @returns String representation of a random number between 100000-999999
+ */
+const generateCode = (): string => randomInt(100000, 1000000).toString();
 
-const generateCode = () => randomInt(100000, 1000000).toString();
-
-const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
+/**
+ * Creates SHA-256 hash of a login code for secure storage.
+ *
+ * @param code - Plain text 6-digit code
+ * @returns Hex-encoded hash string
+ */
+const hashCode = (code: string): string => createHash('sha256').update(code).digest('hex');
 
 const resendClient = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-const sendEmail = async (email: string, code: string) => {
+/**
+ * Sends the login code via email or logs it when Resend is not configured.
+ *
+ * @param email - Recipient email address
+ * @param code - Generated one-time code
+ */
+const sendEmail = async (email: string, code: string): Promise<void> => {
     if (!resendClient) {
         console.info(`Login code for ${email}: ${code}`);
         return;
@@ -37,7 +56,13 @@ const sendEmail = async (email: string, code: string) => {
     }
 };
 
-export const POST = async (request: NextRequest) => {
+/**
+ * Handles POST requests for generating and sending login codes.
+ *
+ * @param request - Incoming Next.js request containing the user email
+ * @returns JSON response indicating success or failure status
+ */
+export const POST = async (request: NextRequest): Promise<NextResponse> => {
     try {
         const body = await request.json();
         const parsed = requestSchema.safeParse(body);
@@ -47,7 +72,6 @@ export const POST = async (request: NextRequest) => {
         }
 
         const email = parsed.data.email.trim().toLowerCase();
-        // Basic per-email limit: 3 requests / 10 minutes
         const rlKey = `auth:otp:requests:${email}`;
         try {
             const n = await redis.incr(rlKey);

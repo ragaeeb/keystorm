@@ -1,6 +1,6 @@
 'use client';
 import { Card, CardTitle } from '@/components/ui/card';
-import { FINGER_POSITIONS } from '../../lib/constants';
+import { FINGER_POSITIONS } from '@/lib/constants';
 
 export default function FingerLegend({ side }: { side: 'left' | 'right' }) {
     const slice = side === 'left' ? FINGER_POSITIONS.slice(0, 4) : FINGER_POSITIONS.slice(4, 8);

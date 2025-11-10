@@ -1,6 +1,10 @@
 import { setTimeout } from 'node:timers/promises';
 import { GoogleGenAI } from '@google/genai';
+import { redactText, sanitizeResponse } from './textUtils';
 
+/**
+ * Available Gemini model versions
+ */
 export enum GeminiModel {
     FlashLiteV2_5 = 'gemini-2.5-flash-lite',
     ProV2_5 = 'gemini-2.5-pro',
@@ -8,28 +12,26 @@ export enum GeminiModel {
 
 const RATE_LIMIT_KEYWORDS = ['429', 'rate limit', 'Too Many Requests', 'model is overloaded'];
 
-const redactText = (key: string): string => {
-    if (key.length <= 8) {
-        return '***';
-    }
-    return `${key.slice(0, 4)}...${key.slice(-4)}`;
+/**
+ * Configuration options for Gemini API generation
+ */
+type GenerateOptions = {
+    /** Maximum retry attempts on failure */
+    maxRetries?: number;
+    /** Request timeout in milliseconds */
+    timeout?: number;
 };
 
-const sanitizeResponse = (text: string): string => {
-    let cleaned = text.trim();
-    if (cleaned.startsWith('```json')) {
-        cleaned = cleaned.slice(7);
-    } else if (cleaned.startsWith('```')) {
-        cleaned = cleaned.slice(3);
-    }
-    if (cleaned.endsWith('```')) {
-        cleaned = cleaned.slice(0, -3);
-    }
-    return cleaned.trim();
-};
-
-type GenerateOptions = { maxRetries?: number; timeout?: number };
-
+/**
+ * Generates content using Google Gemini API with retry logic and validation
+ * @param prompt - The prompt to send to the model
+ * @param apiKey - Google AI API key
+ * @param validate - Validation function that returns true if response is valid
+ * @param model - Gemini model to use (default: FlashLiteV2_5)
+ * @param options - Generation options (maxRetries, timeout)
+ * @returns Sanitized response text
+ * @throws Error if all retries fail or validation never passes
+ */
 export const generateWithGemini = async (
     prompt: string,
     apiKey: string,
