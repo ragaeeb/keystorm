@@ -1,6 +1,7 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { type ReactNode, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -29,15 +30,27 @@ type LearnLayoutProps = {
  * @param props.children - Tutorial content (instructions, examples, images)
  */
 export const LearnLayout = ({ title, description, nextRoute, buttonText, children }: LearnLayoutProps) => {
-    const formRef = useRef<HTMLFormElement>(null);
+    // const formRef = useRef<HTMLFormElement>(null); // No longer needed
+    const router = useRouter(); // Use the router
+
+    const handleNavigate = useCallback(() => {
+        // Set completion flags based on the tutorial title
+        if (title.includes('Number Row')) {
+            sessionStorage.setItem('numbersCompleted', 'true');
+        } else if (title.includes('Punctuation')) {
+            sessionStorage.setItem('punctuationCompleted', 'true');
+        }
+        // Note: 'Shift Key' tutorial goes to /practice/capitals, which sets its own flag
+
+        router.push(nextRoute);
+    }, [title, nextRoute, router]);
 
     // This useEffect adds the global "Enter" key listener
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                // Submits the form, triggering the 'action'
-                formRef.current?.requestSubmit();
+                handleNavigate(); // Call our new handler
             }
         };
 
@@ -45,7 +58,7 @@ export const LearnLayout = ({ title, description, nextRoute, buttonText, childre
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, []); // Runs once on mount
+    }, [handleNavigate]); // Add handleNavigate dependency
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-8">
@@ -61,11 +74,17 @@ export const LearnLayout = ({ title, description, nextRoute, buttonText, childre
                     <CardContent className="space-y-8">
                         {children}
 
-                        <form ref={formRef} action={nextRoute} className="text-center">
-                            <Button type="submit" size="lg" className="bg-gradient-to-r from-indigo-600 to-purple-600">
+                        {/* Remove form, use Button onClick */}
+                        <div className="text-center">
+                            <Button
+                                type="button" // Change type
+                                onClick={handleNavigate} // Add onClick
+                                size="lg"
+                                className="bg-gradient-to-r from-indigo-600 to-purple-600"
+                            >
                                 {buttonText || 'Press Enter to Continue'}
                             </Button>
-                        </form>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

@@ -12,7 +12,8 @@ import { usePersistPracticeSummary } from '@/hooks/usePersistPracticeSummary';
 import { usePracticeLessons } from '@/hooks/usePracticeLessons';
 import { useTypingGame } from '@/hooks/useTypingGame';
 import { getNextLevelRoute } from '@/lib/lesson/descriptions';
-import type { ActiveLesson, LevelSummary } from '@/types/lesson';
+import { loadLevelFromJson } from '@/lib/lesson/lazy';
+import type { ActiveLesson, Lesson, LevelSummary } from '@/types/lesson';
 
 const useStartGameOnEnter = (gameState: 'ready' | 'playing' | 'finished', startGame: () => void) => {
     useEffect(() => {
@@ -34,6 +35,7 @@ export default function PracticePage() {
     const [showConfetti, setShowConfetti] = useState(false);
     const [levelComplete, setLevelComplete] = useState(false);
     const [completedLevels, setCompletedLevels] = useState<LevelSummary[]>([]);
+    const [isLoadingNextLevel, setIsLoadingNextLevel] = useState(false);
 
     const levelProgressRef = useRef<{
         totalAccuracy: number;
@@ -48,6 +50,7 @@ export default function PracticePage() {
     }, []);
 
     const { lessons, mounted } = usePracticeLessons(router, resetProgress);
+    const [allLessons, setAllLessons] = useState<Lesson[]>([]);
 
     const { playErrorSound, playSuccessSound, playConfettiSound } = useAudioContext();
 
@@ -87,6 +90,18 @@ export default function PracticePage() {
         stats,
     });
 
+    useEffect(() => {
+        if (mounted && lessons.length > 0) {
+            setAllLessons(lessons); // Initialize with the lessons from the hook
+            setActiveLesson({ ...lessons[0], index: 0 });
+            setCurrentItemIndex(0);
+            levelProgressRef.current = null;
+            setLevelComplete(false);
+            setShowConfetti(false);
+            resetGame();
+        }
+    }, [lessons, mounted, resetGame]);
+
     const currentText = activeLesson?.content[currentItemIndex] ?? '';
     const progress = currentText.length > 0 ? (typingState.userInput.length / currentText.length) * 100 : 0;
     const nextChar = typingState.userInput.length < currentText.length ? currentText[typingState.userInput.length] : '';
@@ -94,18 +109,19 @@ export default function PracticePage() {
     const itemProgress = activeLesson ? Math.round(((currentItemIndex + 1) / activeLesson.content.length) * 100) : 0;
 
     useEffect(() => {
-        if (!mounted || lessons.length === 0) {
-            return;
+        if (mounted && lessons.length > 0) {
+            setAllLessons(lessons); // Initialize with the lessons from the hook
+            setActiveLesson({ ...lessons[0], index: 0 });
+            setCurrentItemIndex(0);
+            levelProgressRef.current = null;
+            setLevelComplete(false);
+            setShowConfetti(false);
+            resetGame();
         }
-        setActiveLesson({ ...lessons[0], index: 0 });
-        setCurrentItemIndex(0);
-        levelProgressRef.current = null;
-        setLevelComplete(false);
-        setShowConfetti(false);
-        resetGame();
     }, [lessons, mounted, resetGame]);
 
-    const handleNext = useCallback(() => {
+    const handleNext = useCallback(async () => {
+        // <-- MAKE THIS ASYNC
         if (!activeLesson) {
             return;
         }
@@ -113,17 +129,40 @@ export default function PracticePage() {
         setLevelComplete(false);
         setShowConfetti(false);
 
-        // --- THIS IS THE FIX ---
-        // Check if the level we just completed has a tutorial after it
         const tutorialRoute = getNextLevelRoute(activeLesson.type);
-        if (tutorialRoute && tutorialRoute.startsWith('/learn/')) {
+        if (tutorialRoute?.startsWith('/learn/')) {
             router.push(tutorialRoute);
+            return;
+        }
+
+        const isLastLessonInCurrentList = activeLesson.index === allLessons.length - 1;
+
+        // --- FIX: Dynamic loading logic ---
+        if (isLastLessonInCurrentList && activeLesson.level < 10) {
+            setIsLoadingNextLevel(true);
+            try {
+                // Load the next level's JSON file on demand
+                const nextLesson = await loadLevelFromJson(activeLesson.level + 1);
+                const nextLessonIndex = activeLesson.index + 1;
+
+                setAllLessons((prev) => [...prev, nextLesson]); // Add it to our list
+                setActiveLesson({ ...nextLesson, index: nextLessonIndex }); // Set it as active
+                setCurrentItemIndex(0);
+                levelProgressRef.current = null;
+                resetGame();
+            } catch (err) {
+                console.error('Failed to load next level, redirecting to summary', err);
+                router.push('/practice/summary'); // Failsafe
+            } finally {
+                setIsLoadingNextLevel(false);
+            }
             return;
         }
         // --- END FIX ---
 
-        if (activeLesson.index < lessons.length - 1) {
-            const nextLesson = lessons[activeLesson.index + 1];
+        if (activeLesson.index < allLessons.length - 1) {
+            // Check against allLessons
+            const nextLesson = allLessons[activeLesson.index + 1]; // Get from allLessons
             setActiveLesson({ ...nextLesson, index: activeLesson.index + 1 });
             setCurrentItemIndex(0);
             levelProgressRef.current = null;
@@ -131,8 +170,9 @@ export default function PracticePage() {
             return;
         }
 
+        // Only go to summary if we're truly done
         router.push('/practice/summary');
-    }, [activeLesson, lessons, resetGame, router]); // <-- 'router' is now a dependency
+    }, [activeLesson, allLessons, resetGame, router]);
 
     const handleSubmit = useCallback(
         (event: FormEvent<HTMLFormElement>) => {
@@ -144,7 +184,7 @@ export default function PracticePage() {
         [levelComplete, handleNext],
     );
 
-    if (!mounted || !activeLesson) {
+    if (!mounted || !activeLesson || isLoadingNextLevel) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
                 <Card className="p-8">
@@ -162,7 +202,7 @@ export default function PracticePage() {
             handleInputChange={handleInputChange}
             handleSubmit={handleSubmit}
             inputRef={inputRef}
-            isLastLesson={activeLesson.index >= lessons.length - 1}
+            isLastLesson={activeLesson.level === 10}
             itemProgress={itemProgress}
             levelComplete={levelComplete}
             nextChar={nextChar}

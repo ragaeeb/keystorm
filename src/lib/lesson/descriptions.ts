@@ -42,14 +42,14 @@ export const getLevelDescription = (type: LessonType): string => {
 export const getNextLevelRoute = (currentType: LessonType): string | null => {
     const routeMap: Record<LessonType, string | null> = {
         advanced: '/practice',
-        capitals: '/learn/numbers',
+        capitals: '/practice', // <-- FIX: Was '/learn/numbers', now correctly routes to /practice for Level 4
         expert: '/practice/summary',
         letters: '/practice',
         mixed: '/learn/punctuation',
         numbers: '/practice',
         paragraphs: '/practice',
         punctuation: '/practice',
-        sentences: '/learn/numbers',
+        sentences: '/learn/numbers', // This is now correct, flows from L4 to L5's tutorial
         words: '/learn/shift',
     };
 
