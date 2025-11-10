@@ -152,11 +152,13 @@ export const useLessonStore = create<LessonState>((set, get) => ({
      * Replaces the lesson list and tracks whether only early levels are loaded.
      */
     setLessons: (lessons) => {
-        const isEarly = lessons.length > 0 && lessons.every((l) => l.level <= 4);
-        set({
-            hasEarlyLessons: isEarly || get().hasEarlyLessons,
-            lessons,
-            loadedLevels: new Set(lessons.map((l) => l.level)),
+        set((state) => {
+            const isEarly = lessons.length > 0 && lessons.every((l) => l.level <= 4);
+            return {
+                hasEarlyLessons: isEarly || state.hasEarlyLessons,
+                lessons,
+                loadedLevels: new Set(lessons.map((l) => l.level)),
+            };
         });
     },
 }));
