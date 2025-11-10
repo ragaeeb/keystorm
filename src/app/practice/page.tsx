@@ -26,7 +26,6 @@ const useStartGameOnEnter = (gameState: 'ready' | 'playing' | 'finished', startG
 };
 
 const useDebugMode = (
-    currentItemIndex: number,
     totalItems: number,
     setCurrentItemIndex: React.Dispatch<React.SetStateAction<number>>,
     inputRef: React.RefObject<HTMLInputElement | null>,
@@ -50,7 +49,7 @@ const useDebugMode = (
         };
         window.addEventListener('keydown', handleDebugKey);
         return () => window.removeEventListener('keydown', handleDebugKey);
-    }, [currentItemIndex, totalItems, setCurrentItemIndex, inputRef]);
+    }, [totalItems, setCurrentItemIndex, inputRef]);
 };
 
 export default function PracticePage() {
@@ -85,7 +84,7 @@ export default function PracticePage() {
 
     usePersistPracticeSummary(mounted, completedLevels);
     useStartGameOnEnter(gameState, startGame);
-    useDebugMode(currentItemIndex, activeLesson?.content.length ?? 0, setCurrentItemIndex, inputRef);
+    useDebugMode(activeLesson?.content.length ?? 0, setCurrentItemIndex, inputRef);
 
     const stats = useGameStats(typingState, activeLesson?.content[currentItemIndex] ?? '');
 

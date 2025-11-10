@@ -39,7 +39,6 @@ export const POST = async (request: NextRequest) => {
             return NextResponse.json({ error: 'Theme is not permitted' }, { status: 400 });
         }
 
-        console.log('GENERATE LESSONS ROUTE CALLED', theme);
         const lessons = await generateLessons(theme);
         return NextResponse.json({ lessons });
     } catch (error) {

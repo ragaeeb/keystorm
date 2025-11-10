@@ -49,8 +49,6 @@ export const useAudioContext = () => {
         const audio = successAudioRef.current;
         audio.currentTime = 0;
 
-        // Add this check
-        console.log('calling audio.play()');
         const playPromise = audio.play();
         if (playPromise !== undefined) {
             playPromise.catch(() => {

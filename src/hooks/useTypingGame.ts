@@ -41,11 +41,7 @@ type UseTypingGameReturn = {
  * <input ref={inputRef} value={typingState.userInput} onChange={handleInputChange} />
  * ```
  */
-export const useTypingGame = (
-    currentText: string,
-    onError: () => void,
-    onSuccess?: () => void,
-): UseTypingGameReturn => {
+export const useTypingGame = (currentText: string, onError: () => void, onSuccess: () => void): UseTypingGameReturn => {
     const [gameState, setGameState] = useState<'ready' | 'playing' | 'finished'>('ready');
     const [typingState, setTypingState] = useState<TypingState>({
         backspaceCount: 0,
@@ -71,6 +67,9 @@ export const useTypingGame = (
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const value = e.target.value;
 
+            // --- We'll use these to trigger side effects *after* the state update ---
+            let isError = false;
+
             setTypingState((prev) => {
                 const prevLength = prev.userInput.length;
                 const newState = { ...prev, userInput: value };
@@ -82,24 +81,23 @@ export const useTypingGame = (
                 if (value.length > prevLength) {
                     const lastChar = value[value.length - 1];
                     const expectedChar = currentText[value.length - 1];
-                    console.log('[handleInputChange] New char typed:', {
-                        expectedChar,
-                        lastChar,
-                        match: lastChar === expectedChar,
-                    });
 
                     if (lastChar !== expectedChar) {
                         newState.errors = prev.errors + 1;
-                        onError();
-                    } else if (onSuccess) {
-                        console.log('[handleInputChange] Calling onSuccess callback');
-
-                        onSuccess();
+                        isError = true; // Mark that an error happened
+                        // onError() moved out
                     }
                 }
 
-                return newState;
+                return newState; // This function is now PURE
             });
+
+            if (isError) {
+                console.log('[handleInputChange] New char typed: ERROR');
+                onError();
+            } else {
+                onSuccess();
+            }
 
             if (value === currentText) {
                 setGameState('finished');
