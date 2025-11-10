@@ -19,15 +19,20 @@ export default function PracticeSummaryPage() {
         const totalWpm = completedLevels.reduce((sum, level) => sum + level.totalWpm, 0);
         const totalErrors = completedLevels.reduce((sum, level) => sum + level.totalErrors, 0);
         const totalItems = completedLevels.reduce((sum, level) => sum + level.items, 0);
+        const totalLevels = completedLevels.length;
+
+        const averageAccuracy = totalItems > 0 ? Math.round(totalAccuracy / totalItems) : 0;
+        const averageWpm = totalItems > 0 ? Math.round(totalWpm / totalItems) : 0;
 
         return {
             completedAt: new Date().toISOString(),
             levels: completedLevels,
             overall: {
-                averageAccuracy: Math.round(totalAccuracy / totalItems),
-                averageWpm: Math.round(totalWpm / totalItems),
-                exercisesCompleted: totalItems,
+                averageAccuracy,
+                averageWpm,
                 totalErrors,
+                totalItems,
+                totalLevels,
             },
         };
     }, [completedLevels]);

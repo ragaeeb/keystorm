@@ -288,6 +288,17 @@ Levels load on-demand: early levels (1-4) load immediately, advanced levels (5-1
 - Biome for linting and formatting
 - Small, testable utility functions
 
+### Testing & Coverage
+
+- `bun test` executes a fast unit-test suite focused on critical infrastructure
+  - Gemini client with retry and sanitization logic
+  - Lesson lazy-loading utilities with cache coordination
+  - Text utilities for redaction and response cleanup
+  - Passwordless auth request flow including rate limiting and email delivery
+  - Zustand lesson store behaviors (loading, caching, completion state)
+- Tests rely on Bun's native `bun:test` runner and lightweight mocks—no external services required
+- Run `bun test` before committing to ensure regression safety
+
 ## Environment Variables
 
 | Variable | Required | Description |

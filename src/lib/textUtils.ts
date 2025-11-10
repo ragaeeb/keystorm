@@ -3,7 +3,7 @@
  * @param key - The API key to redact
  * @returns Redacted string in format "abcd...wxyz" or "***" for short keys
  */
-export const redactText = (key: string) => {
+export const redactText = (key: string): string => {
     if (key.length <= 8) {
         return '***';
     }
@@ -15,7 +15,7 @@ export const redactText = (key: string) => {
  * @param text - Raw text from API response
  * @returns Cleaned text without markdown formatting
  */
-export const sanitizeResponse = (text: string) => {
+export const sanitizeResponse = (text: string): string => {
     let cleaned = text.trim();
     if (cleaned.startsWith('```json')) {
         cleaned = cleaned.slice(7);

@@ -16,24 +16,25 @@ export const loadLevelFromJson = async (level: number): Promise<Lesson> => {
 };
 
 /**
- * Loads early levels (1-4) immediately for fast startup
- * These are small and needed for initial user experience
+ * Loads early levels (1-4) immediately for fast startup.
+ *
+ * @returns Promise resolving to lessons for the first four levels
  */
 export const loadEarlyLevels = async (): Promise<Lesson[]> => {
     return Promise.all([loadLevelFromJson(1), loadLevelFromJson(2), loadLevelFromJson(3), loadLevelFromJson(4)]);
 };
 
 /**
- * Prefetches the next level in background while user is practicing current level
- * Called when user clicks "Start" on a level
+ * Prefetches the next level in background while the user is practicing the current level.
+ *
  * @param currentLevel - Current level number
- * @returns Promise resolving to next level lesson or null if last level
+ * @returns Promise resolving to the next level lesson or null when no next level exists
  */
 export const prefetchNextLevel = async (currentLevel: number): Promise<Lesson | null> => {
     const nextLevel = currentLevel + 1;
 
     if (nextLevel > 10) {
-        return null; // No more levels
+        return null;
     }
 
     try {
@@ -45,12 +46,13 @@ export const prefetchNextLevel = async (currentLevel: number): Promise<Lesson | 
 };
 
 /**
- * Cache for prefetched lessons to avoid duplicate fetches
+ * Cache for prefetched lessons to avoid duplicate fetches.
  */
 const prefetchCache = new Map<number, Promise<Lesson>>();
 
 /**
- * Prefetch with deduplication - prevents multiple requests for same level
+ * Prefetches a level with deduplication to prevent duplicate fetches.
+ *
  * @param level - Level number to prefetch
  */
 export const prefetchLevelWithCache = (level: number): void => {
@@ -64,7 +66,8 @@ export const prefetchLevelWithCache = (level: number): void => {
 };
 
 /**
- * Gets a cached prefetched level or loads it fresh
+ * Gets a cached prefetched level or loads it fresh if not cached.
+ *
  * @param level - Level number
  * @returns Promise resolving to lesson
  */
@@ -79,18 +82,23 @@ export const getLevelWithCache = async (level: number): Promise<Lesson> => {
 };
 
 /**
- * Preload strategy: Load levels 1-4 immediately, prefetch 5-10 on demand
- * @returns Promise resolving to array of early levels (1-4)
+ * Clears the internal prefetch cache. Primarily used in test environments.
+ */
+export const clearPrefetchCache = (): void => {
+    prefetchCache.clear();
+};
+
+/**
+ * Implements the preload strategy: load levels 1-4 immediately and prefetch
+ * levels 5-6 in the background.
+ *
+ * @returns Promise resolving to the array of early levels (1-4)
  */
 export const loadAllLevelsProgressive = async (): Promise<Lesson[]> => {
-    // Load early levels immediately (required for startup)
     const earlyLevels = await loadEarlyLevels();
 
-    // Prefetch mid levels in background (nice to have)
     prefetchLevelWithCache(5);
     prefetchLevelWithCache(6);
-
-    // Late levels (7-10) will be loaded on-demand when user reaches them
 
     return earlyLevels;
 };

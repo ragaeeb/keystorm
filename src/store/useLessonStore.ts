@@ -2,42 +2,61 @@ import { create } from 'zustand';
 import { loadLevelFromJson } from '@/lib/lesson/lazy';
 import type { Lesson, LevelSummary } from '@/types/lesson';
 
+/**
+ * Flags representing whether key tutorial sections have been completed.
+ */
 type CompletionFlags = {
-    lettersCompleted: boolean;
     capitalsCompleted: boolean;
+    lettersCompleted: boolean;
     numbersCompleted: boolean;
     punctuationCompleted: boolean;
 };
 
+/**
+ * Shape of the lesson store maintained through Zustand.
+ */
 type LessonState = {
-    lessons: Lesson[];
-    loadedLevels: Set<number>;
-    completionFlags: CompletionFlags;
-    completedLevels: LevelSummary[];
-    isLoading: boolean;
-    error: string | null;
-    hasEarlyLessons: boolean;
-
-    setLessons: (lessons: Lesson[]) => void;
-    loadLevel: (level: number) => Promise<Lesson | null>;
-    getLesson: (level: number) => Lesson | undefined;
-    setCompletionFlag: (flag: keyof CompletionFlags, value: boolean) => void;
     addCompletedLevel: (summary: LevelSummary) => void;
-    resetProgress: () => void;
+    clearCompletedLevels: () => void;
     clearError: () => void;
+    completedLevels: LevelSummary[];
+    completionFlags: CompletionFlags;
+    error: string | null;
+    getLesson: (level: number) => Lesson | undefined;
     hasCompletedLevel: (level: number) => boolean;
+    hasEarlyLessons: boolean;
+    isLoading: boolean;
+    lessons: Lesson[];
+    loadLevel: (level: number) => Promise<Lesson | null>;
+    loadedLevels: Set<number>;
+    resetProgress: () => void;
+    setCompletionFlag: (flag: keyof CompletionFlags, value: boolean) => void;
+    setLessons: (lessons: Lesson[]) => void;
 };
 
+/**
+ * Zustand store for lesson management including loading, completion tracking,
+ * and caching of lesson data.
+ */
 export const useLessonStore = create<LessonState>((set, get) => ({
+    /**
+     * Adds or updates the completion summary for a level.
+     */
     addCompletedLevel: (summary) => {
         set((state) => {
             const filtered = state.completedLevels.filter((l) => l.level !== summary.level);
             return { completedLevels: [...filtered, summary].sort((a, b) => a.level - b.level) };
         });
     },
+    /**
+     * Clears all stored completion summaries.
+     */
     clearCompletedLevels: () => {
         set({ completedLevels: [] });
     },
+    /**
+     * Resets the last error state.
+     */
     clearError: () => {
         set({ error: null });
     },
@@ -50,10 +69,16 @@ export const useLessonStore = create<LessonState>((set, get) => ({
     },
     error: null,
 
+    /**
+     * Retrieves a lesson by its level number.
+     */
     getLesson: (level) => {
         return get().lessons.find((l) => l.level === level);
     },
 
+    /**
+     * Determines whether the given level has been completed.
+     */
     hasCompletedLevel: (level) => {
         return get().completedLevels.some((l) => l.level === level);
     },
@@ -62,10 +87,11 @@ export const useLessonStore = create<LessonState>((set, get) => ({
     lessons: [],
     loadedLevels: new Set(),
 
+    /**
+     * Loads a level from either the existing lessons or lazily from JSON.
+     */
     loadLevel: async (level) => {
         const state = get();
-
-        // Check if already loaded (from AI generation or previous fetch)
         const existingLesson = state.lessons.find((l) => l.level === level);
         if (existingLesson) {
             console.log(
@@ -100,6 +126,9 @@ export const useLessonStore = create<LessonState>((set, get) => ({
         }
     },
 
+    /**
+     * Resets completion flags and recorded summaries.
+     */
     resetProgress: () => {
         set({
             completedLevels: [],
@@ -112,10 +141,16 @@ export const useLessonStore = create<LessonState>((set, get) => ({
         });
     },
 
+    /**
+     * Sets a tutorial completion flag.
+     */
     setCompletionFlag: (flag, value) => {
         set((state) => ({ completionFlags: { ...state.completionFlags, [flag]: value } }));
     },
 
+    /**
+     * Replaces the lesson list and tracks whether only early levels are loaded.
+     */
     setLessons: (lessons) => {
         const isEarly = lessons.length > 0 && lessons.every((l) => l.level <= 4);
         set({
