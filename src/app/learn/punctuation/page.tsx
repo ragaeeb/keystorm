@@ -8,6 +8,7 @@ export default function PunctuationPage() {
             description="Punctuation marks add meaning to your writing. Learn where each symbol lives and which finger to use."
             nextRoute="/practice"
             buttonText="Press Enter to Start Punctuation Practice"
+            completionFlag="punctuationCompleted"
         >
             <div className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
                 <h3 className="mb-4 font-semibold text-xl">Common Punctuation Marks</h3>

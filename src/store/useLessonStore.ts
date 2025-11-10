@@ -16,13 +16,16 @@ type LessonState = {
     completedLevels: LevelSummary[];
     isLoading: boolean;
     error: string | null;
+    hasEarlyLessons: boolean;
 
     setLessons: (lessons: Lesson[]) => void;
     loadLevel: (level: number) => Promise<Lesson | null>;
+    getLesson: (level: number) => Lesson | undefined;
     setCompletionFlag: (flag: keyof CompletionFlags, value: boolean) => void;
     addCompletedLevel: (summary: LevelSummary) => void;
     resetProgress: () => void;
     clearError: () => void;
+    hasCompletedLevel: (level: number) => boolean;
 };
 
 export const useLessonStore = create<LessonState>((set, get) => ({
@@ -44,6 +47,15 @@ export const useLessonStore = create<LessonState>((set, get) => ({
         punctuationCompleted: false,
     },
     error: null,
+
+    getLesson: (level) => {
+        return get().lessons.find((l) => l.level === level);
+    },
+
+    hasCompletedLevel: (level) => {
+        return get().completedLevels.some((l) => l.level === level);
+    },
+    hasEarlyLessons: false,
     isLoading: false,
     lessons: [],
     loadedLevels: new Set(),
@@ -51,17 +63,24 @@ export const useLessonStore = create<LessonState>((set, get) => ({
     loadLevel: async (level) => {
         const state = get();
 
-        if (state.loadedLevels.has(level)) {
-            return state.lessons.find((l) => l.level === level) || null;
+        // Check if already loaded (from AI generation or previous fetch)
+        const existingLesson = state.lessons.find((l) => l.level === level);
+        if (existingLesson) {
+            console.log(
+                `[Store] Level ${level} already in store (${state.loadedLevels.has(level) ? 'AI-generated' : 'cached'})`,
+            );
+            return existingLesson;
         }
 
         if (state.isLoading) {
-            return null;
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            return get().lessons.find((l) => l.level === level) || null;
         }
 
         set({ error: null, isLoading: true });
 
         try {
+            console.log(`[Store] Fetching level ${level} from JSON (lazy load)`);
             const lesson = await loadLevelFromJson(level);
 
             set((state) => ({
@@ -96,6 +115,11 @@ export const useLessonStore = create<LessonState>((set, get) => ({
     },
 
     setLessons: (lessons) => {
-        set({ lessons, loadedLevels: new Set(lessons.map((l) => l.level)) });
+        const isEarly = lessons.length > 0 && lessons.every((l) => l.level <= 4);
+        set({
+            hasEarlyLessons: isEarly || get().hasEarlyLessons,
+            lessons,
+            loadedLevels: new Set(lessons.map((l) => l.level)),
+        });
     },
 }));

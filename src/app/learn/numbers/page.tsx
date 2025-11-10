@@ -8,6 +8,7 @@ export default function NumbersPage() {
             description="Numbers are located on the top row of your keyboard. Each finger reaches up from its home position."
             nextRoute="/practice"
             buttonText="Press Enter to Start Numbers Practice"
+            completionFlag="numbersCompleted"
         >
             <div className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
                 <h3 className="mb-4 font-semibold text-xl">Finger-to-Number Mapping</h3>

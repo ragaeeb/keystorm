@@ -1,56 +1,43 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useCallback, useEffect, useRef } from 'react';
+import { type ReactNode, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLessonStore } from '@/store/useLessonStore';
 
 type LearnLayoutProps = {
     title: string;
     description: string | ReactNode;
     nextRoute: string;
     buttonText?: string;
+    completionFlag?: 'numbersCompleted' | 'punctuationCompleted';
     children: ReactNode;
 };
 
-/**
- * Reusable layout component for all tutorial/learn pages
- *
- * Provides consistent structure:
- * - Full-screen gradient background
- * - Centered card with max-width
- * - Header with title and description
- * - Content area with custom children
- * - Bottom navigation button
- *
- * @param props.title - Main heading text
- * @param props.description - Subtitle or instructions (can be JSX)
- * @param props.nextRoute - URL to navigate to when button is clicked
- * @param props.buttonText - Custom button text (default: "Press Enter to Continue")
- * @param props.children - Tutorial content (instructions, examples, images)
- */
-export const LearnLayout = ({ title, description, nextRoute, buttonText, children }: LearnLayoutProps) => {
-    // const formRef = useRef<HTMLFormElement>(null); // No longer needed
-    const router = useRouter(); // Use the router
+export const LearnLayout = ({
+    title,
+    description,
+    nextRoute,
+    buttonText,
+    completionFlag,
+    children,
+}: LearnLayoutProps) => {
+    const router = useRouter();
+    const setCompletionFlag = useLessonStore((state) => state.setCompletionFlag);
 
     const handleNavigate = useCallback(() => {
-        // Set completion flags based on the tutorial title
-        if (title.includes('Number Row')) {
-            sessionStorage.setItem('numbersCompleted', 'true');
-        } else if (title.includes('Punctuation')) {
-            sessionStorage.setItem('punctuationCompleted', 'true');
+        if (completionFlag) {
+            setCompletionFlag(completionFlag, true);
         }
-        // Note: 'Shift Key' tutorial goes to /practice/capitals, which sets its own flag
-
         router.push(nextRoute);
-    }, [title, nextRoute, router]);
+    }, [completionFlag, nextRoute, router, setCompletionFlag]);
 
-    // This useEffect adds the global "Enter" key listener
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                handleNavigate(); // Call our new handler
+                handleNavigate();
             }
         };
 
@@ -58,7 +45,7 @@ export const LearnLayout = ({ title, description, nextRoute, buttonText, childre
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [handleNavigate]); // Add handleNavigate dependency
+    }, [handleNavigate]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-8">
@@ -74,11 +61,10 @@ export const LearnLayout = ({ title, description, nextRoute, buttonText, childre
                     <CardContent className="space-y-8">
                         {children}
 
-                        {/* Remove form, use Button onClick */}
                         <div className="text-center">
                             <Button
-                                type="button" // Change type
-                                onClick={handleNavigate} // Add onClick
+                                type="button"
+                                onClick={handleNavigate}
                                 size="lg"
                                 className="bg-gradient-to-r from-indigo-600 to-purple-600"
                             >

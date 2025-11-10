@@ -21,8 +21,8 @@ export default function CapitalsPracticePage() {
     const [mounted, setMounted] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
 
-    const lessons = useLessonStore((state) => state.lessons);
     const loadLevel = useLessonStore((state) => state.loadLevel);
+    const getLesson = useLessonStore((state) => state.getLesson);
     const isLoading = useLessonStore((state) => state.isLoading);
     const setCompletionFlag = useLessonStore((state) => state.setCompletionFlag);
 
@@ -38,23 +38,16 @@ export default function CapitalsPracticePage() {
 
     useEffect(() => {
         const loadCapitals = async () => {
-            const capitalsLesson = lessons.find((lesson) => lesson.type === 'capitals');
+            const capitalsLesson = getLesson(3) || (await loadLevel(3));
 
             if (capitalsLesson) {
                 setWords(capitalsLesson.content);
-                setMounted(true);
-                return;
-            }
-
-            const loaded = await loadLevel(3);
-            if (loaded) {
-                setWords(loaded.content);
             }
             setMounted(true);
         };
 
         loadCapitals();
-    }, [lessons, loadLevel]);
+    }, [loadLevel, getLesson]);
 
     useEffect(() => {
         if (!mounted || !currentWord || isLoading) {

@@ -21,8 +21,8 @@ export default function LetterPracticePage() {
     const [mounted, setMounted] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
 
-    const lessons = useLessonStore((state) => state.lessons);
     const loadLevel = useLessonStore((state) => state.loadLevel);
+    const getLesson = useLessonStore((state) => state.getLesson);
     const isLoading = useLessonStore((state) => state.isLoading);
     const setCompletionFlag = useLessonStore((state) => state.setCompletionFlag);
 
@@ -38,23 +38,16 @@ export default function LetterPracticePage() {
 
     useEffect(() => {
         const loadLetters = async () => {
-            const letterLesson = lessons.find((lesson) => lesson.type === 'letters');
+            const letterLesson = getLesson(1) || (await loadLevel(1));
 
             if (letterLesson) {
                 setLetters(letterLesson.content);
-                setMounted(true);
-                return;
-            }
-
-            const loaded = await loadLevel(1);
-            if (loaded) {
-                setLetters(loaded.content);
             }
             setMounted(true);
         };
 
         loadLetters();
-    }, [lessons, loadLevel]);
+    }, [loadLevel, getLesson]);
 
     useEffect(() => {
         if (!mounted || !currentLetter || isLoading) {

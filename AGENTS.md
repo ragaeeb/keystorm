@@ -13,9 +13,18 @@ KeyStorm is a modern, AI-powered touch typing tutor built with Next.js 15, React
 - **Animations**: Motion (Framer Motion)
 - **AI**: Google Gemini 2.5 Flash Lite with TOON format (30-60% token reduction)
 - **Auth**: NextAuth.js with passwordless email codes
-- **Storage**: Upstash Redis (login codes), localStorage (user preferences), sessionStorage (lesson state)
+- **State Management**: Zustand with persist middleware
+- **Storage**: Upstash Redis (login codes), Zustand (user preferences, lesson state, progress)
 
 ### Core Concepts
+
+#### State Management
+All application state is managed through Zustand stores:
+
+- **useLessonStore**: Manages lessons, level loading, completion flags, and completed levels
+- **useUserStore**: Manages user name and theme preferences (persisted to localStorage)
+
+Previous sessionStorage usage has been eliminated in favor of centralized state management.
 
 #### Learning Progression
 1. **Landing** (`/landing`) - Authentication or guest mode
@@ -59,6 +68,28 @@ type Lesson = {
 
 ## Key Components
 
+### State Stores
+
+#### useLessonStore (`src/store/useLessonStore.ts`)
+Manages all lesson-related state:
+- **lessons**: Array of loaded lessons
+- **loadedLevels**: Set of level numbers already fetched
+- **completionFlags**: Tracks completion of special levels (letters, capitals, numbers, punctuation)
+- **completedLevels**: Array of performance summaries for completed levels
+- **loadLevel(level)**: Lazily loads a level from JSON file
+- **getLesson(level)**: Returns cached lesson if already loaded
+- **setCompletionFlag(flag, value)**: Updates completion status
+- **addCompletedLevel(summary)**: Adds level performance data
+- **resetProgress()**: Clears completion state
+
+#### useUserStore (`src/store/useUserStore.ts`)
+Manages user profile with localStorage persistence:
+- **name**: User's name or nickname
+- **theme**: Selected learning theme
+- **setName(name)**: Updates user name
+- **setTheme(theme)**: Updates theme
+- **clearProfile()**: Resets to defaults
+
 ### Tutorial Pages
 
 #### Shift Key Tutorial (`/learn/shift`)
@@ -72,12 +103,14 @@ type Lesson = {
 - Which finger reaches which numbers
 - Index fingers cover two numbers each (4+5, 6+7)
 - Visual number row reference
+- Sets `numbersCompleted` flag on exit
 
 #### Punctuation Tutorial (`/learn/punctuation`)
 - Common punctuation marks and locations
 - Shift requirements for symbols
 - Right pinky keys (;:'/?"-)
 - Practice examples with explanations
+- Sets `punctuationCompleted` flag on exit
 
 ### Audio System (`hooks/useAudioContext.ts`)
 - `playErrorSound()` - Wrong keystroke (200Hz sine)
@@ -94,11 +127,23 @@ type Lesson = {
 - Active finger: opacity 0.95, inactive: 0.15
 - Color-coded by finger (8 colors from `FINGER_POSITIONS`)
 
-### Storage Strategy
-- **localStorage**: User name, theme preferences (persistent)
-- **sessionStorage**: Current lessons, progress state, completion flags (per-session)
-- **Redis**: Login codes (10-min TTL, rate-limited)
-- **public/lessons/*.json**: Externalized lesson data per level (1.json through 10.json)
+### Lazy Loading Strategy
+**Early Lessons (1-4):**
+- For **default theme**: Load from `public/lessons/1-4.json` 
+- For **custom theme**: Generate via Gemini API (cached in Redis)
+- Loaded when user clicks "Start" on `/start` page
+
+**Advanced Lessons (5-10):**
+- Always loaded from `public/lessons/5-10.json`
+- Fetched **on-demand** as user completes earlier levels
+- `loadLevel(n)` checks cache first, then fetches if needed
+- Prevents unnecessary API calls and reduces initial bundle size
+
+**Benefits:**
+- AI-generated lessons only for early levels (cost-efficient)
+- Later levels use curated JSON content (consistent quality)
+- No upfront loading of all 10 levels (faster startup)
+- Progressive loading matches user pace
 
 ## Development Patterns
 
@@ -131,15 +176,16 @@ Benefits:
 - Small, testable utility functions
 - Biome for linting/formatting
 
-### State Management
-- React hooks for local state
-- SessionStorage for cross-page state
-- No global state management library
+### State Management Patterns
+- Use Zustand stores for global state
+- React hooks for local component state
+- No sessionStorage or localStorage (except via Zustand persist)
+- Completion flags manage tutorial/level progression
 
 ### API Routes
 - `/api/auth/[...nextauth]` - NextAuth handler
 - `/api/auth/request-code` - Email OTP generation
-- `/api/generate-lessons` - Theme-based lesson creation (TOON format)
+- `/api/generate-lessons` - Theme-based lesson creation (TOON format, early levels only)
 
 ### Security Features
 - Rate limiting on auth (5 attempts/5min per email)
@@ -155,7 +201,7 @@ Benefits:
 3. Modify Gemini prompt in `lib/lesson/generator.ts` (use TOON format)
 4. Update validation in `validateToonResponse()` and `parseToonResponse()`
 5. Add tutorial page if needed (`/learn/*`)
-6. Update `public/defaultLessons.json` with default content
+6. Create JSON file in `public/lessons/{level}.json`
 
 ### Modifying Keyboard Layout
 - Edit `KEYBOARD_ROWS` in `lib/constants.ts`
@@ -176,8 +222,14 @@ Benefits:
 
 ### Updating Default Lessons
 - Edit individual level files in `public/lessons/*.json` (1.json through 10.json)
-- Validate JSON structure matches Lesson[] type
+- Validate JSON structure matches Lesson type
 - Redeploy to apply changes
+
+### Adding Store Fields
+1. Add field to store type in `useLessonStore.ts` or `useUserStore.ts`
+2. Add setter/getter methods
+3. For persistence, use Zustand's `persist` middleware
+4. Update components to use new store methods
 
 ## Testing
 
@@ -189,6 +241,10 @@ Benefits:
 5. Audio: error sound, success sound, confetti sound
 6. Responsive: mobile, tablet, desktop layouts
 7. All 10 levels complete successfully
+8. State persistence: refresh page, state should be maintained (user profile only)
+
+### Debug Shortcuts
+- **Ctrl+Shift+D**: Skip to last item in level (dev mode or `?debug=true`)
 
 ### Unit Tests
 - `lib/keyboard.test.ts` - Keyboard utility functions
@@ -216,17 +272,18 @@ bun run lint             # Run Biome linter
 ```
 
 ### Static Files
-Ensure `public/defaultLessons.json` is included in deployment.
+Ensure all files in `public/lessons/*.json` are included in deployment.
 
 ## Common Pitfalls
 
-1. **SessionStorage Clearing**: Progress resets if user navigates back to `/start`
+1. **Store Hydration**: Zustand persist stores may not be available immediately on mount - check for undefined
 2. **Audio Context**: Must be initialized after user gesture (handled in useEffect)
 3. **Keyboard Position Calculation**: X/Y coordinates depend on row-specific offsets
 4. **Rate Limiting**: Redis errors fallback to in-memory store (see `lib/redis.ts`)
 5. **Theme Validation**: Regex requires word boundaries for blocked terms
 6. **TOON Parsing**: Ensure proper line-by-line parsing for TOON format responses
-7. **Default Lessons Loading**: Handle fetch failures gracefully with fallback
+7. **Lazy Loading**: Always check if lesson exists before rendering, show loading state
+8. **Completion Flags**: Tutorial pages must set completion flags to allow progression
 
 ## Extension Points
 
@@ -238,20 +295,20 @@ Ensure `public/defaultLessons.json` is included in deployment.
 ### Custom Lesson Algorithms
 - Implement in `lib/lesson/generator.ts`
 - Can replace Gemini with custom logic
-- Must return same `Lesson[]` structure
+- Must return same `Lesson` structure
 - Consider using TOON format for token efficiency
 
 ### Analytics Integration
 - Hook into `useTypingGame` for keystroke data
-- Track level completion in `useLevelProgression`
+- Track level completion via `useLessonStore.addCompletedLevel`
 - Monitor API calls in `lib/gemini.ts`
 - Track TOON token savings vs JSON baseline
 
 ### Adding More Tutorial Pages
 1. Create page in `src/app/learn/[topic]/page.tsx`
-2. Add route to progression flow
-3. Update `getNextLevelRoute()` in descriptions
-4. Include visual examples and keyboard diagrams
+2. Use `<LearnLayout>` with `completionFlag` prop
+3. Add route mapping in `getNextLevelRoute()` in descriptions
+4. Update store with new completion flag if needed
 
 ## TOON Format Details
 
@@ -283,7 +340,7 @@ users[2]{id,name,role}:
 
 ### Implementation
 - Convert JSON to TOON before sending to LLM
-- Parse TOON response back to JSON for application use
+- Parse TOON response back to typed objects
 - Handle both formats for backwards compatibility
 
 ## Resources
@@ -292,9 +349,10 @@ users[2]{id,name,role}:
 - [shadcn/ui Components](https://ui.shadcn.com)
 - [Gemini API Reference](https://ai.google.dev/docs)
 - [NextAuth.js Guide](https://next-auth.js.org)
+- [Zustand Documentation](https://zustand-demo.pmnd.rs)
 - [TOON Format Specification](https://github.com/toon-format/toon)
 
 ---
 
 **Last Updated**: 2025-11-09  
-**Version**: 1.2.0
+**Version**: 1.3.0
