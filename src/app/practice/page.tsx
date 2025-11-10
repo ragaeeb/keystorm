@@ -24,7 +24,6 @@ export default function PracticePage() {
     const isLoading = useLessonStore((state) => state.isLoading);
     const completionFlags = useLessonStore((state) => state.completionFlags);
     const addCompletedLevel = useLessonStore((state) => state.addCompletedLevel);
-    const resetProgress = useLessonStore((state) => state.resetProgress);
 
     const levelProgressRef = useRef<{
         totalAccuracy: number;
@@ -44,13 +43,9 @@ export default function PracticePage() {
         isLastItemOfLevel ? playConfettiSound : undefined,
     );
 
-    useDebugSkip(
-        activeLesson?.content.length ?? 0,
-        (totalItems) => setCurrentItemIndex(Math.max(0, totalItems - 1)),
-        inputRef,
-    );
-
     const stats = useGameStats(typingState, activeLesson?.content[currentItemIndex] ?? '');
+
+    console.log('completionFlags.lettersCompleted', completionFlags.lettersCompleted);
 
     useEffect(() => {
         const initializePractice = async () => {
@@ -58,8 +53,6 @@ export default function PracticePage() {
                 router.replace('/practice/letters');
                 return;
             }
-
-            resetProgress();
 
             let nextLevel = 2;
 
@@ -78,7 +71,7 @@ export default function PracticePage() {
                 return;
             }
 
-            console.log(`[Practice] Loading level ${nextLevel}${nextLevel > 4 ? ' (lazy load from JSON)' : ''}`);
+            console.log(`[Practice] Loading level ${nextLevel}`);
             const lesson = getLesson(nextLevel) || (await loadLevel(nextLevel));
 
             if (lesson) {
@@ -92,7 +85,7 @@ export default function PracticePage() {
         };
 
         initializePractice();
-    }, [completionFlags, loadLevel, getLesson, resetGame, resetProgress, router]);
+    }, [completionFlags, loadLevel, getLesson, resetGame, router]);
 
     useEffect(() => {
         if (gameState !== 'finished' || !activeLesson) {
@@ -171,12 +164,22 @@ export default function PracticePage() {
         setLevelComplete(false);
         setShowConfetti(false);
 
-        const tutorialRoute = getNextLevelRoute(activeLesson.type);
-        if (tutorialRoute?.startsWith('/learn/')) {
-            router.push(tutorialRoute);
+        // FIX: Pass both level and type
+        const nextRoute = getNextLevelRoute(activeLesson.level, activeLesson.type);
+
+        // If it's a tutorial page, navigate there
+        if (nextRoute.startsWith('/learn/')) {
+            router.push(nextRoute);
             return;
         }
 
+        // If it's the summary page, navigate there
+        if (nextRoute === '/practice/summary') {
+            router.push('/practice/summary');
+            return;
+        }
+
+        // Otherwise, load next level in /practice
         const nextLevel = activeLesson.level + 1;
         if (nextLevel <= 10) {
             const loaded = getLesson(nextLevel) || (await loadLevel(nextLevel));
@@ -189,8 +192,17 @@ export default function PracticePage() {
             }
         }
 
+        // Fallback
         router.push('/practice/summary');
     }, [activeLesson, loadLevel, getLesson, resetGame, router]);
+
+    useDebugSkip({
+        inputRef,
+        onSkipToLast: (total) => setCurrentItemIndex(Math.max(0, total - 1)),
+        onSkipToNext: () => setCurrentItemIndex((prev) => Math.min(prev + 1, (activeLesson?.content.length ?? 1) - 1)),
+        onSkipToNextLevel: handleNext, // Reuse existing function
+        totalItems: activeLesson?.content.length ?? 0,
+    });
 
     const handleSubmit = useCallback(
         (event: FormEvent<HTMLFormElement>) => {

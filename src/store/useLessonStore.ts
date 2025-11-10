@@ -35,7 +35,9 @@ export const useLessonStore = create<LessonState>((set, get) => ({
             return { completedLevels: [...filtered, summary].sort((a, b) => a.level - b.level) };
         });
     },
-
+    clearCompletedLevels: () => {
+        set({ completedLevels: [] });
+    },
     clearError: () => {
         set({ error: null });
     },

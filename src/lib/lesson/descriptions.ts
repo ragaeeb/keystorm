@@ -33,25 +33,31 @@ export const getLevelDescription = (type: LessonType): string => {
 };
 
 /**
- * Gets the next route after completing a level
- * Includes tutorial pages before new skill introductions
- *
- * @param currentType - Current lesson type
- * @returns Route to navigate to, or null if it's the last level
+ * Complete progression map: defines the exact route after each level
+ * Format: [level, lessonType] -> next route
  */
-export const getNextLevelRoute = (currentType: LessonType): string | null => {
-    const routeMap: Record<LessonType, string | null> = {
-        advanced: '/practice',
-        capitals: '/practice', // <-- FIX: Was '/learn/numbers', now correctly routes to /practice for Level 4
-        expert: '/practice/summary',
-        letters: '/practice',
-        mixed: '/learn/punctuation',
-        numbers: '/practice',
-        paragraphs: '/practice',
-        punctuation: '/practice',
-        sentences: '/learn/numbers', // This is now correct, flows from L4 to L5's tutorial
-        words: '/learn/shift',
-    };
+const PROGRESSION_MAP: Record<string, string> = {
+    '1-letters': '/practice',
+    '2-words': '/learn/shift',
+    '3-capitals': '/practice',
+    '4-sentences': '/learn/numbers',
+    '5-numbers': '/practice',
+    '6-mixed': '/learn/punctuation',
+    '7-punctuation': '/practice',
+    '8-paragraphs': '/practice',
+    '9-advanced': '/practice',
+    '10-expert': '/practice/summary',
+};
 
-    return routeMap[currentType] ?? '/practice';
+/**
+ * Gets the next route after completing a level
+ * Uses a simple map lookup for clarity and maintainability
+ *
+ * @param level - Current level number (1-10)
+ * @param type - Current lesson type
+ * @returns Route to navigate to
+ */
+export const getNextLevelRoute = (level: number, type: LessonType): string => {
+    const key = `${level}-${type}`;
+    return PROGRESSION_MAP[key] || '/practice';
 };

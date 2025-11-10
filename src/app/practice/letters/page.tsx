@@ -10,7 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { GradientProgress } from '@/components/ui/gradient-progress';
 import { Input } from '@/components/ui/input';
 import { useAudioContext } from '@/hooks/useAudioContext';
+import { useDebugSkip } from '@/hooks/useDebugSkip';
 import { useTypingGame } from '@/hooks/useTypingGame';
+import { getNextLevelRoute } from '@/lib/lesson/descriptions';
 import { useLessonStore } from '@/store/useLessonStore';
 
 export default function LetterPracticePage() {
@@ -99,7 +101,9 @@ export default function LetterPracticePage() {
                 setShowConfetti(true);
                 setTimeout(() => {
                     setCompletionFlag('lettersCompleted', true);
-                    router.push('/practice');
+                    const nextRoute = getNextLevelRoute(1, 'letters');
+                    console.log('letters/page::getNextLevelRoute', nextRoute);
+                    router.push(nextRoute);
                 }, 2500);
             }
         }, 250);
@@ -112,22 +116,19 @@ export default function LetterPracticePage() {
         router.push('/practice');
     }, [router, setCompletionFlag]);
 
-    useEffect(() => {
-        const handleDebugKey = (e: KeyboardEvent) => {
-            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-                e.preventDefault();
-                const isDev = process.env.NODE_ENV === 'development';
-                const hasDebugParam = typeof window !== 'undefined' && window.location.search.includes('debug=true');
+    const handleSkipToNextLevel = useCallback(() => {
+        setCompletionFlag('lettersCompleted', true);
+        const nextRoute = getNextLevelRoute(1, 'letters');
+        router.push(nextRoute);
+    }, [setCompletionFlag, router]);
 
-                if (isDev || hasDebugParam) {
-                    console.log('[Debug] Skipping to last letter');
-                    setCurrentIndex(Math.max(0, letters.length - 1));
-                }
-            }
-        };
-        window.addEventListener('keydown', handleDebugKey);
-        return () => window.removeEventListener('keydown', handleDebugKey);
-    }, [letters.length]);
+    useDebugSkip({
+        inputRef,
+        onSkipToLast: (total) => setCurrentIndex(Math.max(0, total - 1)),
+        onSkipToNext: () => setCurrentIndex((prev) => Math.min(prev + 1, letters.length - 1)),
+        onSkipToNextLevel: handleSkipToNextLevel,
+        totalItems: letters.length,
+    });
 
     if (isLoading || !mounted) {
         return (

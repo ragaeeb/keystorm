@@ -10,7 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { GradientProgress } from '@/components/ui/gradient-progress';
 import { Input } from '@/components/ui/input';
 import { useAudioContext } from '@/hooks/useAudioContext';
+import { useDebugSkip } from '@/hooks/useDebugSkip';
 import { useTypingGame } from '@/hooks/useTypingGame';
+import { getNextLevelRoute } from '@/lib/lesson/descriptions';
 import { useLessonStore } from '@/store/useLessonStore';
 
 export default function CapitalsPracticePage() {
@@ -85,7 +87,8 @@ export default function CapitalsPracticePage() {
                 setShowConfetti(true);
                 setTimeout(() => {
                     setCompletionFlag('capitalsCompleted', true);
-                    router.push('/practice');
+                    const nextRoute = getNextLevelRoute(3, 'capitals');
+                    router.push(nextRoute);
                 }, 2500);
             }
         }, 250);
@@ -93,22 +96,20 @@ export default function CapitalsPracticePage() {
         return () => clearTimeout(timeout);
     }, [currentIndex, gameState, words.length, router, setCompletionFlag]);
 
-    useEffect(() => {
-        const handleDebugKey = (e: KeyboardEvent) => {
-            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-                e.preventDefault();
-                const isDev = process.env.NODE_ENV === 'development';
-                const hasDebugParam = typeof window !== 'undefined' && window.location.search.includes('debug=true');
+    const handleSkipToNextLevel = useCallback(() => {
+        setCompletionFlag('capitalsCompleted', true);
+        const nextRoute = getNextLevelRoute(3, 'capitals');
+        router.push(nextRoute);
+    }, [setCompletionFlag, router]);
 
-                if (isDev || hasDebugParam) {
-                    console.log('[Debug] Skipping to last word');
-                    setCurrentIndex(Math.max(0, words.length - 1));
-                }
-            }
-        };
-        window.addEventListener('keydown', handleDebugKey);
-        return () => window.removeEventListener('keydown', handleDebugKey);
-    }, [words.length]);
+    // Update hook call:
+    useDebugSkip({
+        inputRef,
+        onSkipToLast: (total) => setCurrentIndex(Math.max(0, total - 1)),
+        onSkipToNext: () => setCurrentIndex((prev) => Math.min(prev + 1, words.length - 1)),
+        onSkipToNextLevel: handleSkipToNextLevel,
+        totalItems: words.length,
+    });
 
     const handleSkip = useCallback(() => {
         setCompletionFlag('capitalsCompleted', true);

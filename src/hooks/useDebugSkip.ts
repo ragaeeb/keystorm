@@ -1,54 +1,72 @@
 import { useEffect } from 'react';
 
+type DebugSkipOptions = {
+    /** Total number of items in current level */
+    totalItems: number;
+    /** Callback to skip to last item (Ctrl+Shift+L) */
+    onSkipToLast: (totalItems: number) => void;
+    /** Optional callback to skip to next item (Ctrl+Shift+N) */
+    onSkipToNext?: () => void;
+    /** Optional callback to skip to next level (Ctrl+Shift+Right) */
+    onSkipToNextLevel?: () => void;
+    /** Optional ref to focus after skip */
+    inputRef?: React.RefObject<HTMLInputElement | null>;
+};
+
 /**
- * Custom hook for debug mode keyboard shortcut (Ctrl+Shift+D)
+ * Debug keyboard shortcuts for practice pages
  *
- * Enables quick skipping to the last item in a level for testing purposes.
- * Only active in development mode or when URL contains ?debug=true parameter.
- *
- * When triggered:
- * - Calls onSkip callback with total item count
- * - Logs debug message to console
- * - Prevents default browser behavior
- *
- * @param totalItems - Total number of items in current level
- * @param onSkip - Callback function to execute when debug skip is triggered
- *
- * @example
- * ```tsx
- * const [currentIndex, setCurrentIndex] = useState(0);
- *
- * useDebugSkip(letters.length, (total) => {
- *   setCurrentIndex(Math.max(0, total - 1));
- * });
- * ```
+ * Shortcuts (dev mode or ?debug=true):
+ * - Ctrl+Shift+L: Skip to last item
+ * - Ctrl+Shift+N: Skip to next item
+ * - Ctrl+Shift+→: Skip to next level
  */
-export const useDebugSkip = (
-    totalItems: number,
-    onSkip: (totalItems: number) => void,
-    inputRef?: React.RefObject<HTMLInputElement | null>,
-) => {
+export const useDebugSkip = ({
+    totalItems,
+    onSkipToLast,
+    onSkipToNext,
+    onSkipToNextLevel,
+    inputRef,
+}: DebugSkipOptions) => {
     useEffect(() => {
         const handleDebugKey = (event: KeyboardEvent) => {
-            if (event.ctrlKey && event.shiftKey && event.key === 'D') {
+            if (!event.ctrlKey || !event.shiftKey) {
+                return;
+            }
+
+            const isDev = process.env.NODE_ENV === 'development';
+            const hasDebugParam = typeof window !== 'undefined' && window.location.search.includes('debug=true');
+
+            if (!isDev && !hasDebugParam) {
+                return;
+            }
+
+            if (event.key === 'L') {
                 event.preventDefault();
+                console.log(`[Debug] Skipping to last item (${totalItems} total)`);
+                onSkipToLast(totalItems);
 
-                const isDev = process.env.NODE_ENV === 'development';
-                const hasDebugParam = typeof window !== 'undefined' && window.location.search.includes('debug=true');
+                setTimeout(() => {
+                    inputRef?.current?.focus();
+                    inputRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            } else if (event.key === 'N' && onSkipToNext) {
+                event.preventDefault();
+                console.log('[Debug] Skipping to next item');
+                onSkipToNext();
 
-                if (isDev || hasDebugParam) {
-                    console.log(`[Debug] Skipping to last item (${totalItems} total)`);
-                    onSkip(totalItems);
-
-                    setTimeout(() => {
-                        inputRef?.current?.focus();
-                        inputRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 100);
-                }
+                setTimeout(() => {
+                    inputRef?.current?.focus();
+                    inputRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            } else if (event.key === 'ArrowRight' && onSkipToNextLevel) {
+                event.preventDefault();
+                console.log('[Debug] Skipping to next level');
+                onSkipToNextLevel();
             }
         };
 
         window.addEventListener('keydown', handleDebugKey);
         return () => window.removeEventListener('keydown', handleDebugKey);
-    }, [totalItems, onSkip, inputRef]);
+    }, [totalItems, onSkipToLast, onSkipToNext, onSkipToNextLevel, inputRef]);
 };

@@ -52,7 +52,7 @@ export default function OverallStatsCard({ completionDate, summary }: OverallSta
                 </div>
                 <div className="mt-6 flex flex-wrap gap-3">
                     <Button className="bg-gradient-to-r from-indigo-600 to-purple-600" asChild>
-                        <Link href="/practice">Practicing Again</Link>
+                        <Link href="/practice">Practice Again</Link>
                     </Button>
                     <Button asChild variant="outline">
                         <Link href="/learn">View Learning Tips</Link>
