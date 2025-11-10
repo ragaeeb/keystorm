@@ -30,7 +30,7 @@ export default function LearnPage() {
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Enter') {
-                router.push('/practice/letters');
+                router.push('/practice?mode=letters');
             }
         };
         window.addEventListener('keydown', onKeyDown);
@@ -84,7 +84,7 @@ export default function LearnPage() {
                             <Button
                                 size="lg"
                                 className="bg-gradient-to-r from-indigo-600 to-purple-600"
-                                onClick={() => router.push('/practice/letters')}
+                                onClick={() => router.push('/practice?mode=letters')}
                             >
                                 Press Enter to Start Letter Practice
                             </Button>

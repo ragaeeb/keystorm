@@ -6,7 +6,7 @@ export default function ShiftKeyPage() {
         <LearnLayout
             title="Master the Shift Key"
             description="Now you'll learn to type capital letters using the Shift key."
-            nextRoute="/practice/capitals"
+            nextRoute="/practice?mode=capitals"
             buttonText="Press Enter to Practice Capital Letters"
         >
             <div className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
