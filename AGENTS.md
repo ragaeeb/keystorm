@@ -247,7 +247,13 @@ Benefits:
 - **Ctrl+Shift+D**: Skip to last item in level (dev mode or `?debug=true`)
 
 ### Unit Tests
-- `lib/keyboard.test.ts` - Keyboard utility functions
+- `lib/gemini.test.ts` - Gemini client retries and sanitization
+- `lib/lesson/descriptions.test.ts` - Level descriptions and routing helpers
+- `lib/lesson/lazy.test.ts` - Progressive lesson loading and caching
+- `lib/textUtils.test.ts` - Response sanitization and API key redaction
+- `app/api/auth/request-code/route.test.ts` - Passwordless code issuance flow
+- `store/useLessonStore.test.ts` - Zustand state management behaviors
+- Legacy suites (keyboard, cache, stats, etc.) remain in `src/lib`
 - Run with: `bun test`
 
 ## Deployment

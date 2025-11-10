@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { getLevelDescription } from './descriptions';
+import { getLevelDescription, getNextLevelRoute } from './descriptions';
 
 describe('descriptions', () => {
     describe('getLevelDescription', () => {
@@ -65,6 +65,18 @@ describe('descriptions', () => {
         it('should return generic description for unknown type', () => {
             const desc = getLevelDescription('unknown' as any);
             expect(desc).toContain('complete this level');
+        });
+    });
+
+    describe('getNextLevelRoute', () => {
+        it('should map known level and type combinations to explicit routes', () => {
+            expect(getNextLevelRoute(1, 'letters')).toBe('/practice');
+            expect(getNextLevelRoute(2, 'words')).toBe('/learn/shift');
+            expect(getNextLevelRoute(10, 'expert')).toBe('/practice/summary');
+        });
+
+        it('should fall back to practice route for unknown combinations', () => {
+            expect(getNextLevelRoute(99, 'letters')).toBe('/practice');
         });
     });
 });
