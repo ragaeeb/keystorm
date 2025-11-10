@@ -45,17 +45,17 @@ export default function PracticePage() {
 
     const stats = useGameStats(typingState, activeLesson?.content[currentItemIndex] ?? '');
 
-    console.log('completionFlags.lettersCompleted', completionFlags.lettersCompleted);
-
     useEffect(() => {
+        if (isLoading) {
+            return;
+        }
+
         const initializePractice = async () => {
             if (!completionFlags.lettersCompleted) {
                 router.replace('/practice/letters');
                 return;
             }
-
             let nextLevel = 2;
-
             if (completionFlags.capitalsCompleted) {
                 nextLevel = Math.max(nextLevel, 4);
             }
@@ -65,15 +65,11 @@ export default function PracticePage() {
             if (completionFlags.punctuationCompleted) {
                 nextLevel = Math.max(nextLevel, 8);
             }
-
             if (nextLevel > 10) {
                 router.push('/practice/summary');
                 return;
             }
-
-            console.log(`[Practice] Loading level ${nextLevel}`);
             const lesson = getLesson(nextLevel) || (await loadLevel(nextLevel));
-
             if (lesson) {
                 setActiveLesson({ ...lesson, index: 0 });
                 setCurrentItemIndex(0);
@@ -85,7 +81,7 @@ export default function PracticePage() {
         };
 
         initializePractice();
-    }, [completionFlags, loadLevel, getLesson, resetGame, router]);
+    }, [completionFlags, isLoading, loadLevel, getLesson, resetGame, router]);
 
     useEffect(() => {
         if (gameState !== 'finished' || !activeLesson) {
