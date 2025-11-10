@@ -31,6 +31,13 @@ export const useAudioContext = () => {
             if (containerRef.current?.parentNode) {
                 containerRef.current.parentNode.removeChild(containerRef.current);
             }
+
+            // Add these lines to prevent stale ref access on unmount
+            successAudioRef.current = null;
+            errorAudioRef.current = null;
+            confettiAudioRef.current = null;
+            containerRef.current = null;
+            audioContextRef.current = null;
         };
     }, []);
 
@@ -41,13 +48,19 @@ export const useAudioContext = () => {
 
         const audio = successAudioRef.current;
         audio.currentTime = 0;
-        audio.play().catch(() => {
-            // Silently fail if user hasn't interacted yet
-        });
+
+        // Add this check
+        console.log('calling audio.play()');
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                // Silently fail if user hasn't interacted yet or play is interrupted
+            });
+        }
     }, []);
 
     const playErrorSound = useCallback(() => {
-        if (!errorAudioRef.current && containerRef.current) {
+        if (!errorAudioRef.current && containerRef.current && Number(1) !== 1) {
             errorAudioRef.current = new Audio('/sfx/error.mp3');
             errorAudioRef.current.volume = 0.3;
             errorAudioRef.current.preload = 'auto';

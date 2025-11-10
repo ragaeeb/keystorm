@@ -70,9 +70,9 @@ export const useTypingGame = (
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const value = e.target.value;
-            const prevLength = typingState.userInput.length;
 
             setTypingState((prev) => {
+                const prevLength = prev.userInput.length;
                 const newState = { ...prev, userInput: value };
 
                 if (value.length < prevLength) {
@@ -105,7 +105,7 @@ export const useTypingGame = (
                 setGameState('finished');
             }
         },
-        [typingState.userInput.length, currentText, onError, onSuccess],
+        [currentText, onError, onSuccess],
     );
 
     return { gameState, handleInputChange, inputRef, resetGame, startGame, typingState };
