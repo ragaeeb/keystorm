@@ -1,5 +1,6 @@
 import { setTimeout } from 'node:timers/promises';
 import { GoogleGenAI } from '@google/genai';
+import { redactText, sanitizeResponse } from './textUtils';
 
 /**
  * Available Gemini model versions
@@ -10,36 +11,6 @@ export enum GeminiModel {
 }
 
 const RATE_LIMIT_KEYWORDS = ['429', 'rate limit', 'Too Many Requests', 'model is overloaded'];
-
-/**
- * Redacts an API key for logging purposes by showing only first and last 4 characters
- * @param key - The API key to redact
- * @returns Redacted string in format "abcd...wxyz" or "***" for short keys
- */
-const redactText = (key: string): string => {
-    if (key.length <= 8) {
-        return '***';
-    }
-    return `${key.slice(0, 4)}...${key.slice(-4)}`;
-};
-
-/**
- * Removes markdown code fences from API response text
- * @param text - Raw text from API response
- * @returns Cleaned text without markdown formatting
- */
-const sanitizeResponse = (text: string): string => {
-    let cleaned = text.trim();
-    if (cleaned.startsWith('```json')) {
-        cleaned = cleaned.slice(7);
-    } else if (cleaned.startsWith('```')) {
-        cleaned = cleaned.slice(3);
-    }
-    if (cleaned.endsWith('```')) {
-        cleaned = cleaned.slice(0, -3);
-    }
-    return cleaned.trim();
-};
 
 /**
  * Configuration options for Gemini API generation
