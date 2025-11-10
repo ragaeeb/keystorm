@@ -11,6 +11,7 @@ import { useLevelProgression } from '@/hooks/useLevelProgression';
 import { usePersistPracticeSummary } from '@/hooks/usePersistPracticeSummary';
 import { usePracticeLessons } from '@/hooks/usePracticeLessons';
 import { useTypingGame } from '@/hooks/useTypingGame';
+import { getNextLevelRoute } from '@/lib/lesson/descriptions';
 import type { ActiveLesson, LevelSummary } from '@/types/lesson';
 
 const useStartGameOnEnter = (gameState: 'ready' | 'playing' | 'finished', startGame: () => void) => {
@@ -112,6 +113,15 @@ export default function PracticePage() {
         setLevelComplete(false);
         setShowConfetti(false);
 
+        // --- THIS IS THE FIX ---
+        // Check if the level we just completed has a tutorial after it
+        const tutorialRoute = getNextLevelRoute(activeLesson.type);
+        if (tutorialRoute && tutorialRoute.startsWith('/learn/')) {
+            router.push(tutorialRoute);
+            return;
+        }
+        // --- END FIX ---
+
         if (activeLesson.index < lessons.length - 1) {
             const nextLesson = lessons[activeLesson.index + 1];
             setActiveLesson({ ...nextLesson, index: activeLesson.index + 1 });
@@ -122,7 +132,7 @@ export default function PracticePage() {
         }
 
         router.push('/practice/summary');
-    }, [activeLesson, lessons, resetGame, router]);
+    }, [activeLesson, lessons, resetGame, router]); // <-- 'router' is now a dependency
 
     const handleSubmit = useCallback(
         (event: FormEvent<HTMLFormElement>) => {

@@ -24,7 +24,6 @@ export default function CapitalsPracticePage() {
     const [loading, setLoading] = useState(true);
 
     const currentWord = words[currentIndex] ?? '';
-    const nextWord = words[currentIndex + 1] ?? '';
 
     // Check if this is the last word
     const isLastWord = mounted && words.length > 0 && currentIndex === words.length - 1;
@@ -181,13 +180,6 @@ export default function CapitalsPracticePage() {
                                         {currentWord || '…'}
                                     </div>
                                 </motion.div>
-
-                                {nextWord && (
-                                    <div className="flex flex-col items-center gap-1">
-                                        <div className="text-gray-400 text-xs">Next:</div>
-                                        <div className="text-2xl text-gray-600">{nextWord}</div>
-                                    </div>
-                                )}
                             </div>
 
                             <div className="flex w-full max-w-2xl flex-col items-center gap-4">

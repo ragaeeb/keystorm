@@ -1,5 +1,5 @@
 import { type RefObject, useEffect } from 'react';
-import { getNextLevelRoute } from '@/lib/lesson/descriptions';
+// We no longer need getNextLevelRoute here
 import type { ActiveLesson, LevelSummary } from '@/types/lesson';
 import type { useGameStats } from './useGameStats';
 
@@ -9,7 +9,7 @@ type LevelProgressParams = {
     gameState: 'ready' | 'playing' | 'finished';
     levelProgressRef: RefObject<{ totalAccuracy: number; totalErrors: number; totalWpm: number; items: number } | null>;
     resetGame: () => void;
-    router: { push: (path: string) => void };
+    router: { push: (path: string) => void }; // router is still needed by the type, but not used in the logic we're changing
     setCompletedLevels: React.Dispatch<React.SetStateAction<LevelSummary[]>>;
     setCurrentItemIndex: React.Dispatch<React.SetStateAction<number>>;
     setLevelComplete: React.Dispatch<React.SetStateAction<boolean>>;
@@ -24,7 +24,7 @@ export const useLevelProgression = ({
     gameState,
     levelProgressRef,
     resetGame,
-    router,
+    router, // linter may complain it's unused, that's fine for now
     setCompletedLevels,
     setCurrentItemIndex,
     setLevelComplete,
@@ -75,18 +75,17 @@ export const useLevelProgression = ({
             setLevelComplete(true);
             setShowConfetti(true);
 
-            const tutorialRoute = getNextLevelRoute(activeLesson.type);
-            if (tutorialRoute && tutorialRoute.startsWith('/learn/')) {
-                const confettiTimeout = setTimeout(() => {
-                    router.push(tutorialRoute);
-                }, 2500);
-                return () => clearTimeout(confettiTimeout);
-            }
+            // --- REMOVED TIMER LOGIC ---
+            // The logic to navigate or hide confetti will now be handled
+            // by the 'handleNext' function in the page, which is
+            // triggered by the "Enter" key press on the PracticeView.
 
-            const confettiTimeout = setTimeout(() => setShowConfetti(false), 3000);
-            return () => clearTimeout(confettiTimeout);
+            // We must return a cleanup function.
+            return () => {};
         }
 
+        // This part is for moving between items *within* a level,
+        // so this timeout is correct.
         const timeout = setTimeout(() => {
             setCurrentItemIndex((prev) => prev + 1);
             resetGame();
@@ -99,7 +98,6 @@ export const useLevelProgression = ({
         gameState,
         levelProgressRef,
         resetGame,
-        router,
         setCompletedLevels,
         setCurrentItemIndex,
         setLevelComplete,

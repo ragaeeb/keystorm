@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+'use client';
+
+import { type ReactNode, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -27,6 +29,24 @@ type LearnLayoutProps = {
  * @param props.children - Tutorial content (instructions, examples, images)
  */
 export const LearnLayout = ({ title, description, nextRoute, buttonText, children }: LearnLayoutProps) => {
+    const formRef = useRef<HTMLFormElement>(null);
+
+    // This useEffect adds the global "Enter" key listener
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                // Submits the form, triggering the 'action'
+                formRef.current?.requestSubmit();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []); // Runs once on mount
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-8">
             <div className="mx-auto max-w-6xl">
@@ -41,7 +61,7 @@ export const LearnLayout = ({ title, description, nextRoute, buttonText, childre
                     <CardContent className="space-y-8">
                         {children}
 
-                        <form action={nextRoute} className="text-center">
+                        <form ref={formRef} action={nextRoute} className="text-center">
                             <Button type="submit" size="lg" className="bg-gradient-to-r from-indigo-600 to-purple-600">
                                 {buttonText || 'Press Enter to Continue'}
                             </Button>
