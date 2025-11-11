@@ -42,11 +42,9 @@ export const usePracticeLessons = (
                 return;
             }
 
-            // --- FIX: Check for ALL completed levels ---
             const capitalsCompleted = sessionStorage.getItem('capitalsCompleted');
             const numbersCompleted = sessionStorage.getItem('numbersCompleted');
             const punctuationCompleted = sessionStorage.getItem('punctuationCompleted');
-            // --- END FIX ---
 
             sessionStorage.removeItem('practiceSummary');
             onReset();

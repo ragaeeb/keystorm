@@ -1,11 +1,5 @@
 import { useRouter } from 'next/navigation';
-import {
-    type ChangeEvent,
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
-} from 'react';
+import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useAudioContext } from '@/hooks/useAudioContext';
 import { useDebugSkip } from '@/hooks/useDebugSkip';
 import { useTypingGame } from '@/hooks/useTypingGame';
@@ -57,8 +51,14 @@ export function useSimplePracticeMode(config: SimplePracticeConfig): SimplePract
     const currentItem = items[currentIndex] ?? '';
     const isLastItem = isReady && items.length > 0 && currentIndex === items.length - 1;
 
-    const { typingState, gameState, inputRef, startGame, handleInputChange: baseHandleInputChange, resetGame } =
-        useTypingGame(currentItem, playErrorSound, playSuccessSound, isLastItem ? playConfettiSound : undefined);
+    const {
+        typingState,
+        gameState,
+        inputRef,
+        startGame,
+        handleInputChange: baseHandleInputChange,
+        resetGame,
+    } = useTypingGame(currentItem, playErrorSound, playSuccessSound, isLastItem ? playConfettiSound : undefined);
 
     useEffect(() => {
         const loadPracticeItems = async () => {
@@ -163,14 +163,13 @@ export function useSimplePracticeMode(config: SimplePracticeConfig): SimplePract
         }
 
         return (event: ChangeEvent<HTMLInputElement>) => {
-            const value = event.target.value.slice(-1);
-            const syntheticEvent = {
-                ...event,
-                currentTarget: { ...event.currentTarget, value },
-                target: { ...event.target, value },
-            } as ChangeEvent<HTMLInputElement>;
-
-            baseHandleInputChange(syntheticEvent);
+            const lastChar = event.target.value.slice(-1);
+            // Only update if there's a character to process
+            if (lastChar) {
+                // Create a new event with modified value
+                Object.defineProperty(event, 'target', { value: { ...event.target, value: lastChar }, writable: true });
+                baseHandleInputChange(event);
+            }
         };
     }, [baseHandleInputChange, restrictInputToLastCharacter]);
 
