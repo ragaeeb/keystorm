@@ -1,18 +1,151 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { type FormEvent, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { SimplePracticeTemplate } from '@/components/practice/SimplePracticeTemplate';
 import { PracticeView } from '@/components/practice/practice-view';
+import { KeyboardVisual } from '@/components/typing/KeyboardVisual';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useAudioContext } from '@/hooks/useAudioContext';
-import { useDebugSkip } from '@/hooks/useDebugSkip';
 import { useGameStats } from '@/hooks/useGameStats';
+import { useSimplePracticeMode } from '@/hooks/useSimplePracticeMode';
+import { useDebugSkip } from '@/hooks/useDebugSkip';
 import { useTypingGame } from '@/hooks/useTypingGame';
 import { getNextLevelRoute } from '@/lib/lesson/descriptions';
 import { useLessonStore } from '@/store/useLessonStore';
 import type { ActiveLesson, LevelSummary } from '@/types/lesson';
 
-export default function PracticePage() {
+function PracticeLoadingState({ message }: { message: string }) {
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+            <Card className="p-8">
+                <p className="text-center text-gray-600">{message}</p>
+            </Card>
+        </div>
+    );
+}
+
+function LettersPractice() {
+    const { currentItem, handleInputChange, handleSkip, inputRef, isReady, nextChar, progress, showConfetti, typingState } =
+        useSimplePracticeMode({
+            completionFlag: 'lettersCompleted',
+            lessonType: 'letters',
+            level: 1,
+            restrictInputToLastCharacter: true,
+            skipRoute: '/practice',
+        });
+
+    if (!isReady) {
+        return <PracticeLoadingState message="Loading lesson..." />;
+    }
+
+    return (
+        <SimplePracticeTemplate
+            description="Type each letter as it appears. We'll advance automatically when correct."
+            onSkip={handleSkip}
+            progress={progress}
+            showConfetti={showConfetti}
+            skipLabel="Skip to words practice"
+            title="Letter Practice - Level 1"
+        >
+            <div className="flex flex-1 flex-col items-center justify-center gap-8">
+                <motion.div
+                    key={currentItem}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex h-32 w-32 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 font-bold text-6xl text-white shadow-xl"
+                >
+                    {currentItem || '…'}
+                </motion.div>
+
+                <div className="flex w-full max-w-2xl flex-col items-center gap-4">
+                    <div className="w-full max-w-2xl">
+                        <KeyboardVisual activeKey={nextChar} />
+                    </div>
+                    <div className="flex flex-col items-center gap-3">
+                        <Input
+                            ref={inputRef}
+                            value={typingState.userInput}
+                            onChange={handleInputChange}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck={false}
+                            className="w-40 rounded-full border-2 border-indigo-200 text-center font-semibold text-2xl"
+                        />
+                        <p className="text-center text-gray-500 text-sm">Mistyped letters will stay on screen so you can try again.</p>
+                    </div>
+                </div>
+            </div>
+        </SimplePracticeTemplate>
+    );
+}
+
+function CapitalsPractice() {
+    const { currentItem, handleInputChange, handleSkip, inputRef, isReady, nextChar, progress, showConfetti, typingState } =
+        useSimplePracticeMode({
+            completionFlag: 'capitalsCompleted',
+            lessonType: 'capitals',
+            level: 3,
+            skipRoute: '/practice',
+        });
+
+    if (!isReady) {
+        return <PracticeLoadingState message="Loading lesson..." />;
+    }
+
+    return (
+        <SimplePracticeTemplate
+            description="Type each word with proper capitalization. Use Shift key for capital letters."
+            onSkip={handleSkip}
+            progress={progress}
+            showConfetti={showConfetti}
+            skipLabel="Skip to sentence practice"
+            title="Capital Letters Practice - Level 3"
+        >
+            <div className="flex flex-1 flex-col items-center justify-center gap-6">
+                <div className="flex flex-col items-center gap-4">
+                    <motion.div
+                        key={currentItem}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex flex-col items-center gap-2"
+                    >
+                        <div className="text-gray-500 text-sm">Current word:</div>
+                        <div className="flex h-32 min-w-[200px] items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 px-6 font-bold text-5xl text-white shadow-xl">
+                            {currentItem || '…'}
+                        </div>
+                    </motion.div>
+                </div>
+
+                <div className="flex w-full max-w-2xl flex-col items-center gap-4">
+                    <div className="w-full max-w-2xl">
+                        <KeyboardVisual activeKey={nextChar} />
+                    </div>
+                    <Input
+                        ref={inputRef}
+                        value={typingState.userInput}
+                        onChange={handleInputChange}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        className="w-64 rounded-full border-2 border-indigo-200 text-center font-semibold text-2xl"
+                    />
+                    <div className="rounded-lg bg-blue-50 p-3 text-center text-sm">
+                        <p className="text-gray-700">
+                            💡 <strong>Remember:</strong> Hold Shift with your pinky while pressing the letter key
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </SimplePracticeTemplate>
+    );
+}
+
+function StandardPractice() {
     const router = useRouter();
     const [activeLesson, setActiveLesson] = useState<ActiveLesson>();
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
@@ -52,7 +185,7 @@ export default function PracticePage() {
 
         const initializePractice = async () => {
             if (!completionFlags.lettersCompleted) {
-                router.replace('/practice/letters');
+                router.replace('/practice?mode=letters');
                 return;
             }
             let nextLevel = 2;
@@ -80,7 +213,7 @@ export default function PracticePage() {
             }
         };
 
-        initializePractice();
+        void initializePractice();
     }, [completionFlags, isLoading, loadLevel, getLesson, resetGame, router]);
 
     useEffect(() => {
@@ -160,22 +293,18 @@ export default function PracticePage() {
         setLevelComplete(false);
         setShowConfetti(false);
 
-        // FIX: Pass both level and type
         const nextRoute = getNextLevelRoute(activeLesson.level, activeLesson.type);
 
-        // If it's a tutorial page, navigate there
         if (nextRoute.startsWith('/learn/')) {
             router.push(nextRoute);
             return;
         }
 
-        // If it's the summary page, navigate there
         if (nextRoute === '/practice/summary') {
             router.push('/practice/summary');
             return;
         }
 
-        // Otherwise, load next level in /practice
         const nextLevel = activeLesson.level + 1;
         if (nextLevel <= 10) {
             const loaded = getLesson(nextLevel) || (await loadLevel(nextLevel));
@@ -188,7 +317,6 @@ export default function PracticePage() {
             }
         }
 
-        // Fallback
         router.push('/practice/summary');
     }, [activeLesson, loadLevel, getLesson, resetGame, router]);
 
@@ -196,7 +324,7 @@ export default function PracticePage() {
         inputRef,
         onSkipToLast: (total) => setCurrentItemIndex(Math.max(0, total - 1)),
         onSkipToNext: () => setCurrentItemIndex((prev) => Math.min(prev + 1, (activeLesson?.content.length ?? 1) - 1)),
-        onSkipToNextLevel: handleNext, // Reuse existing function
+        onSkipToNextLevel: handleNext,
         totalItems: activeLesson?.content.length ?? 0,
     });
 
@@ -204,20 +332,14 @@ export default function PracticePage() {
         (event: FormEvent<HTMLFormElement>) => {
             event.preventDefault();
             if (levelComplete) {
-                handleNext();
+                void handleNext();
             }
         },
         [levelComplete, handleNext],
     );
 
     if (!activeLesson || isLoading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-                <Card className="p-8">
-                    <p className="text-center text-gray-600">Loading lessons...</p>
-                </Card>
-            </div>
-        );
+        return <PracticeLoadingState message="Loading lessons..." />;
     }
 
     return (
@@ -238,5 +360,28 @@ export default function PracticePage() {
             stats={stats}
             userInput={typingState.userInput}
         />
+    );
+}
+
+function PracticePageContent() {
+    const searchParams = useSearchParams();
+    const modeParam = (searchParams.get('mode') as 'letters' | 'capitals' | 'standard' | null) ?? 'standard';
+
+    if (modeParam === 'letters') {
+        return <LettersPractice />;
+    }
+
+    if (modeParam === 'capitals') {
+        return <CapitalsPractice />;
+    }
+
+    return <StandardPractice />;
+}
+
+export default function PracticePage() {
+    return (
+        <Suspense fallback={<PracticeLoadingState message="Loading practice..." />}>
+            <PracticePageContent />
+        </Suspense>
     );
 }

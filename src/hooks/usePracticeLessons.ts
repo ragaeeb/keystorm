@@ -8,7 +8,7 @@ import type { Lesson } from '@/types/lesson';
  * Custom hook for loading and managing practice lessons
  *
  * Handles lesson loading from sessionStorage (custom lessons) or JSON files (defaults).
- * Automatically redirects to /practice/letters if letter practice is not completed.
+ * Automatically redirects to /practice?mode=letters if letter practice is not completed.
  * Filters out letter lessons and normalizes content for consistency.
  *
  * @param router - Next.js router instance from useRouter()
@@ -38,15 +38,13 @@ export const usePracticeLessons = (
             const lettersCompleted = sessionStorage.getItem('lettersCompleted');
 
             if (lettersCompleted !== 'true') {
-                router.replace('/practice/letters');
+                router.replace('/practice?mode=letters');
                 return;
             }
 
-            // --- FIX: Check for ALL completed levels ---
             const capitalsCompleted = sessionStorage.getItem('capitalsCompleted');
             const numbersCompleted = sessionStorage.getItem('numbersCompleted');
             const punctuationCompleted = sessionStorage.getItem('punctuationCompleted');
-            // --- END FIX ---
 
             sessionStorage.removeItem('practiceSummary');
             onReset();
