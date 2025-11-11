@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/ragaeeb/keystorm/compare/v1.2.0...v1.2.1) (2025-11-11)
+
+
+### Bug Fixes
+
+* **refactor:** Consolidate practice modes under single route ([#7](https://github.com/ragaeeb/keystorm/issues/7)) ([3221073](https://github.com/ragaeeb/keystorm/commit/3221073c785dd545dd0c51cff6528127428a87dc))
+
 # [1.2.0](https://github.com/ragaeeb/keystorm/compare/v1.1.0...v1.2.0) (2025-11-10)
 
 
