@@ -12,13 +12,26 @@ const createLocalStorageMock = () => {
 };
 
 describe('user-profile', () => {
+    const originalLocalStorage = globalThis.localStorage;
+
     beforeEach(() => {
-        global.localStorage = createLocalStorageMock() as any;
+        Object.defineProperty(globalThis, 'localStorage', {
+            configurable: true,
+            value: createLocalStorageMock(),
+        });
         clearUserProfile();
     });
 
     afterEach(() => {
         clearUserProfile();
+        if (originalLocalStorage) {
+            Object.defineProperty(globalThis, 'localStorage', {
+                configurable: true,
+                value: originalLocalStorage,
+            });
+        } else {
+            delete (globalThis as any).localStorage;
+        }
     });
 
     describe('saveUserName and getUserName', () => {
