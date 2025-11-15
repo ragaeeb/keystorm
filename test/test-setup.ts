@@ -11,20 +11,16 @@ const globalProperties: Record<string, unknown> = {
 
 Object.assign(globalThis, globalProperties);
 
-globalThis.HTMLElement = windowInstance.HTMLElement;
-globalThis.HTMLInputElement = windowInstance.HTMLInputElement;
-globalThis.Node = windowInstance.Node;
-globalThis.MutationObserver = windowInstance.MutationObserver;
+const myGlobalThis: any = globalThis;
 
-Object.defineProperty(globalThis, 'localStorage', {
-    configurable: true,
-    value: windowInstance.localStorage,
-});
+myGlobalThis.HTMLElement = windowInstance.HTMLElement;
+myGlobalThis.HTMLInputElement = windowInstance.HTMLInputElement;
+myGlobalThis.Node = windowInstance.Node;
+myGlobalThis.MutationObserver = windowInstance.MutationObserver;
 
-Object.defineProperty(globalThis, 'sessionStorage', {
-    configurable: true,
-    value: windowInstance.sessionStorage,
-});
+Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: windowInstance.localStorage });
 
-globalThis.requestAnimationFrame = windowInstance.requestAnimationFrame.bind(windowInstance);
-globalThis.cancelAnimationFrame = windowInstance.cancelAnimationFrame.bind(windowInstance);
+Object.defineProperty(globalThis, 'sessionStorage', { configurable: true, value: windowInstance.sessionStorage });
+
+myGlobalThis.requestAnimationFrame = windowInstance.requestAnimationFrame.bind(windowInstance);
+myGlobalThis.cancelAnimationFrame = windowInstance.cancelAnimationFrame.bind(windowInstance);
