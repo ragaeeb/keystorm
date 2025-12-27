@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/ragaeeb/keystorm/compare/v1.2.1...v1.2.2) (2025-12-27)
+
+
+### Bug Fixes
+
+* **security:** Upgrade deps ([93213c0](https://github.com/ragaeeb/keystorm/commit/93213c0328b27fd90850b1bfe59e17169269f790))
+
 ## [1.2.1](https://github.com/ragaeeb/keystorm/compare/v1.2.0...v1.2.1) (2025-11-11)
 
 
